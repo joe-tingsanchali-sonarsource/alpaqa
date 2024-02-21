@@ -46,7 +46,7 @@ option(ALPAQA_WITH_EXAMPLES
 option(ALPAQA_WITH_DRIVERS
     "Build the solver driver programs" On)
 option(ALPAQA_WITH_GRADIENT_CHECKER
-    "Build the solver driver programs" Off)
+    "Build the utility for checking problem gradients" Off)
 option(ALPAQA_WITH_OCP
     "Enable solvers tailored for optimal control problems" On)
 cmake_dependent_option(ALPAQA_WITH_CASADI_OCP
