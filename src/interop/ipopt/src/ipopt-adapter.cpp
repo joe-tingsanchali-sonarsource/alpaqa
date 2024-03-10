@@ -51,12 +51,14 @@ bool IpoptAdapter::get_starting_point(Index n, bool init_x, Number *x,
             mvec{x, n}.setZero();
     }
     if (init_z) {
-        if (initial_guess_bounds_multipliers_l.size() > 0)
-            mvec{z_L, n} = initial_guess_bounds_multipliers_l;
+        if (initial_guess_bounds_multipliers.size() > 0)
+            mvec{z_L, n} = (initial_guess_bounds_multipliers.array() < 0)
+                               .select(initial_guess_bounds_multipliers, 0);
         else
             mvec{z_L, n}.setZero();
-        if (initial_guess_bounds_multipliers_u.size() > 0)
-            mvec{z_U, n} = initial_guess_bounds_multipliers_u;
+        if (initial_guess_bounds_multipliers.size() > 0)
+            mvec{z_U, n} = (initial_guess_bounds_multipliers.array() > 0)
+                               .select(initial_guess_bounds_multipliers, 0);
         else
             mvec{z_U, n}.setZero();
     }

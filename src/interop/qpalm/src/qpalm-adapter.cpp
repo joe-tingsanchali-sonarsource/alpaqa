@@ -81,7 +81,7 @@ build_qpalm_problem(const TypeErasedProblem<EigenConfigd> &problem) {
             .outer_ptr = span{qp.A->p, static_cast<size_t>(qp.A->ncol) + 1},
             .values    = span{qp.A->x, static_cast<size_t>(qp.A->nzmax)},
         };
-        ConstrConv::add_bound_constr_to_constr_matrix(A, problem.get_box_C());
+        ConstrConv::add_box_constr_to_constr_matrix(A, problem.get_box_C());
         qp.A->nrow = A.nrow;
     }
     { // Evaluate constraints

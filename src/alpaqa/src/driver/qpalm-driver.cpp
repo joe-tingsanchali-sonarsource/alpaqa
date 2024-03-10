@@ -1,6 +1,7 @@
 #ifdef ALPAQA_WITH_QPALM
 
 #include <alpaqa/qpalm/qpalm-adapter.hpp>
+#include <alpaqa/util/lin-constr-converter.hpp>
 #include <qpalm/constants.h>
 
 #include <cstdarg>
@@ -18,44 +19,22 @@ std::ostream *qpalm_os = nullptr;
 int print_wrap(const char *fmt, ...) LADEL_ATTR_PRINTF_LIKE;
 int print_wrap_noop(const char *, ...) LADEL_ATTR_PRINTF_LIKE;
 
-void compress_multipliers_bounds(length_t n, length_t m,
-                                 const alpaqa::OwningQPALMData &qp,
-                                 crvec multipliers_bounds, rvec y) {
-    for (index_t col = 0; col < n; ++col) {
-        // Loop over the constraint matrix
-        auto outer = qp.A->p[col];
-        auto nnz   = qp.A->p[col + 1] - outer;
-        if (nnz == 0) // No constraints for this variable
-            continue;
-        auto row = qp.A->i[outer];
-        if (row + m >= y.size()) // Only top rows are bound constraints
-            continue;
-        // Negative multipliers correspond to the lower bound (first half of the
-        // vector), positive multipliers to the upper bound (second half)
-        auto val_lb = multipliers_bounds(col);
-        auto val_ub = multipliers_bounds(col + n);
-        y(row)      = val_lb < 0 ? val_lb : val_ub;
-    }
+void compress_multipliers_bounds(const alpaqa::sets::Box<config_t> &C, rvec y,
+                                 crvec multipliers_bounds) {
+    using Conv    = alpaqa::LinConstrConverter<config_t, index_t, index_t>;
+    index_t shift = 0;
+    for (index_t i = 0; i < C.lowerbound.size(); ++i)
+        if (Conv::is_bound(C, i))
+            y(shift++) = multipliers_bounds(i);
 }
 
-void expand_multipliers_bounds(length_t n, length_t m,
-                               const alpaqa::OwningQPALMData &qp, crvec sol_y,
+void expand_multipliers_bounds(const alpaqa::sets::Box<config_t> &C, crvec y,
                                rvec multipliers_bounds) {
-    for (index_t col = 0; col < n; ++col) {
-        // Loop over the constraint matrix
-        auto outer = qp.A->p[col];
-        auto nnz   = qp.A->p[col + 1] - outer;
-        if (nnz == 0) // No constraints for this variable
-            continue;
-        auto row = qp.A->i[outer];
-        if (row + m >= sol_y.size()) // Only top rows are bound constraints
-            continue;
-        // Negative multipliers correspond to the lower bound (first half of the
-        // vector), positive multipliers to the upper bound (second half)
-        auto value                       = sol_y(row);
-        index_t offset                   = value > 0 ? n : 0;
-        multipliers_bounds(col + offset) = value;
-    }
+    using Conv    = alpaqa::LinConstrConverter<config_t, index_t, index_t>;
+    index_t shift = 0;
+    for (index_t i = 0; i < C.lowerbound.size(); ++i)
+        if (Conv::is_bound(C, i))
+            multipliers_bounds(i) = y(shift++);
 }
 
 SolverResults run_qpalm_solver(auto &problem, const qpalm::Settings &settings,
@@ -69,12 +48,13 @@ SolverResults run_qpalm_solver(auto &problem, const qpalm::Settings &settings,
         ~PrintRestorer() { ladel_set_print_config_printf(print); }
     } restore_print{old_print};
 
-    // Dimensions
-    length_t n = problem.problem.get_n(), m = problem.problem.get_m();
-
     // Adapt problem
     auto qp = alpaqa::build_qpalm_problem(problem.problem);
     qpalm::Solver solver{&qp, settings};
+
+    // Dimensions
+    length_t n = problem.problem.get_n(), m = problem.problem.get_m();
+    [[maybe_unused]] length_t num_bounds = static_cast<length_t>(qp.m) - m;
 
     // Initial guess
     vec initial_guess_mult;
@@ -87,14 +67,17 @@ SolverResults run_qpalm_solver(auto &problem, const qpalm::Settings &settings,
             "Invalid size for initial_guess_y (expected " + std::to_string(m) +
             ", but got " + std::to_string(sz) + ")");
     if (auto sz = problem.initial_guess_w.size(); sz > 0) {
-        if (sz != n * 2)
+        if (sz != n)
             throw std::invalid_argument(
                 "Invalid size for initial_guess_w (expected " +
-                std::to_string(n * 2) + ", but got " + std::to_string(sz) +
-                ")");
+                std::to_string(n) + ", but got " + std::to_string(sz) + ")");
         initial_guess_mult.resize(static_cast<length_t>(qp.m));
-        compress_multipliers_bounds(n, m, qp, problem.initial_guess_w,
-                                    initial_guess_mult);
+        if (problem.problem.provides_get_box_C())
+            compress_multipliers_bounds(problem.problem.get_box_C(),
+                                        initial_guess_mult,
+                                        problem.initial_guess_w);
+        else
+            assert(num_bounds == 0 && initial_guess_mult.size() == m);
         initial_guess_mult.bottomRows(m) = problem.initial_guess_y;
     }
     auto warm_start = [&] {
@@ -135,20 +118,22 @@ SolverResults run_qpalm_solver(auto &problem, const qpalm::Settings &settings,
         .duration           = avg_duration,
         .solver             = "QPALM",
         .h                  = 0,
-        .δ                  = info.dua_res_norm,
-        .ε                  = info.pri_res_norm,
+        .δ                  = info.pri_res_norm,
+        .ε                  = info.dua_res_norm,
         .γ                  = 0,
         .Σ                  = 0,
         .solution           = sol_x,
         .multipliers        = sol_y.bottomRows(m),
-        .multipliers_bounds = vec::Zero(n * 2), // see bleow
+        .multipliers_bounds = vec::Zero(n), // see bleow
         .penalties          = vec::Zero(n),
         .outer_iter         = info.iter_out,
         .inner_iter         = info.iter,
         .extra              = {{"dua2_res_norm", info.dua2_res_norm}},
     };
     // Expand the multipliers for the bounds constraints again
-    expand_multipliers_bounds(n, m, qp, sol_y, results.multipliers_bounds);
+    if (problem.problem.provides_get_box_C())
+        expand_multipliers_bounds(problem.problem.get_box_C(), sol_y,
+                                  results.multipliers_bounds);
     return results;
 }
 

@@ -42,7 +42,7 @@ std::string get_reg_name_option(std::span<const std::string_view> prob_opts) {
 
 void load_initial_guess(Options &opts, LoadedProblem &problem) {
     const auto n = problem.problem.get_n(), m = problem.problem.get_m();
-    alpaqa::params::vec_from_file<config_t> x0{n}, y0{m}, w0{2 * n};
+    alpaqa::params::vec_from_file<config_t> x0{n}, y0{m}, w0{n};
     set_params(x0, "x0", opts);
     if (x0.value)
         problem.initial_guess_x = std::move(*x0.value);

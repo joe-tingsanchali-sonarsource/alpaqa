@@ -5,6 +5,7 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <iterator>
 #include <span>
 
 namespace alpaqa {
@@ -34,7 +35,100 @@ struct LinConstrConverter {
                          std::span<const real_t> ubx, size_t i) {
         using std::isnan; // Assuming no NaN inputs
         return isnan(lbx[i] + ubx[i]) == 0;
-    };
+    }
+    static bool is_bound(const sets::Box<config_t> &C,
+                         typename config_t::index_t i) {
+        return is_bound(to_span(C.lowerbound), to_span(C.upperbound),
+                        static_cast<size_t>(i));
+    }
+
+    static index_t count_bounds(std::span<const real_t> lbx,
+                                std::span<const real_t> ubx) {
+        auto n = static_cast<index_t>(lbx.size());
+        assert(static_cast<index_t>(ubx.size()) == n);
+        index_t shift = 0;
+        for (index_t col = 0; col < n; ++col)
+            shift += is_bound(lbx, ubx, col) ? 1 : 0;
+        return shift;
+    }
+
+    static index_t count_bounds(const sets::Box<config_t> &C) {
+        return count_bounds(to_span(C.lowerbound), to_span(C.upperbound));
+    }
+
+    static void add_box_constr_to_constr_matrix(mat<config_t> &A,
+                                                std::span<const real_t> lbx,
+                                                std::span<const real_t> ubx) {
+        auto n = A.cols(), m = A.rows();
+        index_t shift = count_bounds(lbx, ubx);
+        mat<config_t> B(shift + m, n);
+        B << mat<config_t>::Zero(shift, n), A;
+        shift = 0;
+        for (index_t col = 0; col < n; ++col)
+            if (is_bound(lbx, ubx, col))
+                B(shift++, col) = 1;
+        using std::swap;
+        swap(A, B);
+    }
+    static void add_box_constr_to_constr_matrix(mat<config_t> &A,
+                                                const sets::Box<config_t> &C) {
+        return add_box_constr_to_constr_matrix(A, to_span(C.lowerbound),
+                                               to_span(C.upperbound));
+    }
+
+    static void
+    add_box_constr_to_constr_matrix_inplace(index_t n_row, rmat<config_t> A,
+                                            std::span<const real_t> lbx,
+                                            std::span<const real_t> ubx) {
+        index_t n = A.cols(), shift = A.rows() - n_row;
+        // Shift down the entire matrix in-place
+        for (index_t col = n; col-- > 0;)
+            std::ranges::reverse_copy(
+                A.col(col).topRows(n_row),
+                std::reverse_iterator{A.data() + (col + 1) * A.rows()});
+        // Add ones in the top block
+        A.topRows(shift).setZero();
+        shift = 0;
+        for (index_t col = 0; col < n; ++col)
+            if (is_bound(lbx, ubx, col))
+                A(shift++, col) = 1;
+        assert(shift == A.rows() - n_row);
+    }
+    static void
+    add_box_constr_to_constr_matrix_inplace(index_t n_row, rmat<config_t> A,
+                                            const sets::Box<config_t> &C) {
+        return add_box_constr_to_constr_matrix_inplace(
+            n_row, A, to_span(C.lowerbound), to_span(C.upperbound));
+    }
+
+    static void add_box_constr_to_constr_matrix_inplace_vec(
+        index_t n_row, index_t n_col, rvec<config_t> A,
+        std::span<const real_t> lbx, std::span<const real_t> ubx) {
+        assert(A.size() % n_col == 0);
+        index_t tot_rows = A.size() / n_col;
+        index_t shift    = tot_rows - n_row;
+        // Shift down the entire matrix in-place
+        auto A_old = A.topRows(n_row * n_col).reshaped(n_row, n_col);
+        auto A_new = A.reshaped(tot_rows, n_col);
+        for (index_t col = n_col; col-- > 0;)
+            std::ranges::reverse_copy(
+                A_old.col(col).topRows(n_row),
+                std::reverse_iterator{A.data() + (col + 1) * A_new.rows()});
+        // Add ones in the top block
+        A_new.topRows(shift).setZero();
+        shift = 0;
+        for (index_t col = 0; col < n_col; ++col)
+            if (is_bound(lbx, ubx, col))
+                A_new(shift++, col) = 1;
+        assert(shift == A_new.rows() - n_row);
+    }
+    static void
+    add_box_constr_to_constr_matrix_inplace_vec(index_t n_row, index_t n_col,
+                                                rvec<config_t> A,
+                                                const sets::Box<config_t> &C) {
+        return add_box_constr_to_constr_matrix_inplace_vec(
+            n_row, n_col, A, to_span(C.lowerbound), to_span(C.upperbound));
+    }
 
     /// Update the constraint matrix A, such that for each constraint C(i) with
     /// finite bounds, a row is inserted into A with a one in the i-th column.
@@ -44,14 +138,13 @@ struct LinConstrConverter {
     ///
     /// @pre    Assumes that the user preallocated enough space for inserting
     ///         these nonzero elements into A, and that A is compressed.
-    static void add_bound_constr_to_constr_matrix(SparseView &A,
-                                                  std::span<const real_t> lbx,
-                                                  std::span<const real_t> ubx);
-    static void
-    add_bound_constr_to_constr_matrix(SparseView &A,
-                                      const sets::Box<config_t> &C) {
-        return add_bound_constr_to_constr_matrix(A, to_span(C.lowerbound),
-                                                 to_span(C.upperbound));
+    static void add_box_constr_to_constr_matrix(SparseView &A,
+                                                std::span<const real_t> lbx,
+                                                std::span<const real_t> ubx);
+    static void add_box_constr_to_constr_matrix(SparseView &A,
+                                                const sets::Box<config_t> &C) {
+        return add_box_constr_to_constr_matrix(A, to_span(C.lowerbound),
+                                               to_span(C.upperbound));
     }
 
     /// For each constraint lbx(i)/ubx(i) with finite bounds, insert these
@@ -73,13 +166,21 @@ struct LinConstrConverter {
             to_span(D.upperbound), to_span(new_D.lowerbound),
             to_span(new_D.upperbound), to_span(g0));
     }
+    static void combine_bound_constr(const sets::Box<config_t> &C,
+                                     const sets::Box<config_t> &D,
+                                     std::span<real_t> new_lbg,
+                                     std::span<real_t> new_ubg,
+                                     typename config_t::crvec g0) {
+        return combine_bound_constr(
+            to_span(C.lowerbound), to_span(C.upperbound), to_span(D.lowerbound),
+            to_span(D.upperbound), new_lbg, new_ubg, to_span(g0));
+    }
 };
 
 template <Config Conf, class IndexT, class StorageIndexT>
 void LinConstrConverter<Conf, IndexT, StorageIndexT>::
-    add_bound_constr_to_constr_matrix(SparseView &A,
-                                      std::span<const real_t> lbx,
-                                      std::span<const real_t> ubx) {
+    add_box_constr_to_constr_matrix(SparseView &A, std::span<const real_t> lbx,
+                                    std::span<const real_t> ubx) {
     auto n = static_cast<size_t>(A.ncol);
     assert(A.outer_ptr.size() == static_cast<size_t>(n) + 1);
     auto old_nnz = A.outer_ptr[n];

@@ -37,15 +37,11 @@ SolverResults run_ipopt_solver(auto &problem,
     my_nlp->initial_guess             = problem.initial_guess_x;
     my_nlp->initial_guess_multipliers = problem.initial_guess_y;
     if (auto sz = problem.initial_guess_w.size(); sz > 0) {
-        if (sz != n * 2)
+        if (sz != n)
             throw std::invalid_argument(
                 "Invalid size for initial_guess_w (expected " +
-                std::to_string(n * 2) + ", but got " + std::to_string(sz) +
-                ")");
-        my_nlp->initial_guess_bounds_multipliers_l =
-            problem.initial_guess_w.bottomRows(n);
-        my_nlp->initial_guess_bounds_multipliers_u =
-            problem.initial_guess_w.topRows(n);
+                std::to_string(n) + ", but got " + std::to_string(sz) + ")");
+        my_nlp->initial_guess_bounds_multipliers = problem.initial_guess_w;
     }
 
     // Solve the problem
@@ -58,8 +54,9 @@ SolverResults run_ipopt_solver(auto &problem,
     auto avg_duration = duration_cast<ns>(t1 - t0);
     os.setstate(std::ios_base::badbit);
     for (unsigned i = 0; i < N_exp; ++i) {
-        my_nlp->initial_guess             = problem.initial_guess_x;
-        my_nlp->initial_guess_multipliers = problem.initial_guess_y;
+        my_nlp->initial_guess                    = problem.initial_guess_x;
+        my_nlp->initial_guess_multipliers        = problem.initial_guess_y;
+        my_nlp->initial_guess_bounds_multipliers = problem.initial_guess_w;
 
         auto t0 = std::chrono::steady_clock::now();
         solver->OptimizeTNLP(nlp);
@@ -73,8 +70,10 @@ SolverResults run_ipopt_solver(auto &problem,
     // Results
     auto &nlp_res = my_nlp->results;
     if (nlp_res.status == Ipopt::SolverReturn::UNASSIGNED) {
-        nlp_res.solution_x.resize(n);
-        nlp_res.solution_y.resize(m);
+        nlp_res.solution_x   = vec::Constant(n, alpaqa::NaN<config_t>);
+        nlp_res.solution_y   = vec::Constant(m, alpaqa::NaN<config_t>);
+        nlp_res.solution_z_L = vec::Constant(n, alpaqa::NaN<config_t>);
+        nlp_res.solution_z_U = vec::Constant(n, alpaqa::NaN<config_t>);
     }
     SolverResults results{
         .status             = std::string(enum_name(status)),
@@ -89,15 +88,12 @@ SolverResults run_ipopt_solver(auto &problem,
         .Σ                  = 0,
         .solution           = nlp_res.solution_x,
         .multipliers        = nlp_res.solution_y,
-        .multipliers_bounds = vec(n * 2), // see below
+        .multipliers_bounds = nlp_res.combine_bounds_multipliers(),
         .penalties          = vec::Zero(n),
         .outer_iter         = nlp_res.iter_count,
         .inner_iter         = nlp_res.iter_count,
         .extra              = {},
     };
-    if (nlp_res.status != Ipopt::SolverReturn::UNASSIGNED)
-        results.multipliers_bounds << nlp_res.solution_z_L,
-            nlp_res.solution_z_U;
     return results;
 }
 

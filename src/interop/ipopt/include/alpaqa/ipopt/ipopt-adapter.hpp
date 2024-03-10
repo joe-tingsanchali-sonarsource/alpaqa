@@ -17,8 +17,7 @@ class IPOPT_ADAPTER_EXPORT IpoptAdapter : public Ipopt::TNLP {
     using Problem  = TypeErasedProblem<config_t>;
     const Problem &problem;
     vec initial_guess;
-    vec initial_guess_bounds_multipliers_l;
-    vec initial_guess_bounds_multipliers_u;
+    vec initial_guess_bounds_multipliers;
     vec initial_guess_multipliers;
     using Index  = Ipopt::Index;
     using Number = Ipopt::Number;
@@ -29,6 +28,11 @@ class IPOPT_ADAPTER_EXPORT IpoptAdapter : public Ipopt::TNLP {
         real_t solution_f = NaN<config_t>, infeasibility = NaN<config_t>,
                nlp_error    = NaN<config_t>;
         length_t iter_count = 0;
+
+        [[nodiscard]] vec combine_bounds_multipliers() const {
+            return (-solution_z_L.array() >= solution_z_U.array())
+                .select(solution_z_L, solution_z_U);
+        }
     } results;
 
     IpoptAdapter(const Problem &problem);
