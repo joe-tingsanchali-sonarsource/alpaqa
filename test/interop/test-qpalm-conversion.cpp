@@ -4,11 +4,9 @@
 
 #include <algorithm>
 #include <cmath>
-#include <numeric>
-#include <ranges>
-namespace vw = std::views;
 
 #include <alpaqa/problem/box.hpp>
+#include <alpaqa/util/lin-constr-converter.hpp>
 #include <Eigen/Sparse>
 
 USING_ALPAQA_CONFIG(alpaqa::EigenConfigd);
@@ -114,4 +112,141 @@ TEST(qpalm, convertConstraints) {
     for (auto r = 0; index_t i : bound_indices)
         I(r++, i) = 1;
     EXPECT_THAT(A.toDense().topRows(num_bound_constr), EigenEqual(I));
+}
+
+/**
+ * @test
+ * Algorithm for adding rows to the top of the constraint matrix (which is
+ * stored as CCS). The rows we add only have a single nonzero, and correspond
+ * to bound constraints.
+ */
+TEST(LinConstrConverter, convertConstraintsSparse) {
+    length_t n = 7, m = 9;
+    Box C(n);
+    std::vector<index_t> bound_indices{1, 3, 4, 6};
+    for (index_t i : bound_indices)
+        C.upperbound(i) = 1;
+
+    spmat_t A(m, n);
+    using triplet_t = Eigen::Triplet<real_t, index_t>;
+    std::vector<triplet_t> At{
+        {0, 0, 2.}, {1, 0, 2.}, {8, 0, 2.}, {0, 1, 2.}, {1, 1, 2.}, {3, 1, 2.},
+        {3, 2, 2.}, {3, 3, 2.}, {5, 3, 2.}, {1, 4, 2.}, {2, 4, 2.}, {4, 4, 2.},
+        {6, 4, 2.}, {5, 5, 2.}, {5, 6, 2.}, {8, 6, 2.}, {2, 6, 2.},
+    };
+    A.setFromTriplets(At.begin(), At.end());
+    spmat_t A0 = A;
+    std::cout << A0 << '\n';
+
+    using Conv    = alpaqa::LinConstrConverter<config_t, index_t, index_t>;
+    auto old_rows = A.rows();
+    auto old_nnz  = A.nonZeros();
+    auto num_bound_constr = Conv::count_bounds(C);
+    auto new_nnz          = old_nnz + num_bound_constr;
+    // Resize the row index and value arrays to insert the new nonzeros.
+    A.reserve(new_nnz);
+    A.conservativeResize(m + num_bound_constr, n);
+    using std::span;
+    Conv::SparseView Avw{
+        .nrow      = old_rows,
+        .ncol      = A.cols(),
+        .inner_idx = span{A.innerIndexPtr(), static_cast<size_t>(new_nnz)},
+        .outer_ptr = span{A.outerIndexPtr(), static_cast<size_t>(A.cols() + 1)},
+        .values    = span{A.valuePtr(), static_cast<size_t>(new_nnz)},
+    };
+    Conv::add_box_constr_to_constr_matrix(Avw, C);
+    ASSERT_EQ(Avw.nrow, A.rows());
+
+    std::cout << A << '\n';
+    EXPECT_EQ(num_bound_constr, static_cast<length_t>(bound_indices.size()));
+    EXPECT_THAT(A.toDense().bottomRows(m), EigenEqual(A0.toDense()));
+    mat I = mat::Zero(num_bound_constr, n);
+    for (auto r = 0; index_t i : bound_indices)
+        I(r++, i) = 1;
+    EXPECT_THAT(A.toDense().topRows(num_bound_constr), EigenEqual(I));
+}
+
+TEST(LinConstrConverter, convertConstraintsDense) {
+    length_t n = 7, m = 9;
+    Box C(n);
+    std::vector<index_t> bound_indices{1, 3, 4, 6};
+    for (index_t i : bound_indices)
+        C.upperbound(i) = 1;
+
+    mat A = mat::Constant(m, n, -1);
+    for (index_t c = 0; c < n; ++c)
+        for (index_t r = 0; r < m; ++r)
+            A(r, c) = static_cast<real_t>(10 * (r + 1) + (c + 1));
+
+    mat A0 = A;
+    std::cout << A0 << '\n';
+
+    using Conv = alpaqa::LinConstrConverter<config_t, index_t, index_t>;
+    auto num_bound_constr = Conv::count_bounds(C);
+    Conv::add_box_constr_to_constr_matrix(A, C);
+
+    std::cout << A << '\n';
+    EXPECT_EQ(num_bound_constr, static_cast<length_t>(bound_indices.size()));
+    EXPECT_THAT(A.bottomRows(m), EigenEqual(A0));
+    mat I = mat::Zero(num_bound_constr, n);
+    for (auto r = 0; index_t i : bound_indices)
+        I(r++, i) = 1;
+    EXPECT_THAT(A.topRows(num_bound_constr), EigenEqual(I));
+}
+
+TEST(LinConstrConverter, convertConstraintsDenseInPlace) {
+    length_t n = 7, m = 9;
+    Box C(n);
+    std::vector<index_t> bound_indices{1, 3, 4, 6};
+    for (index_t i : bound_indices)
+        C.upperbound(i) = 1;
+
+    mat A = mat::Constant(m + 4, n, -1);
+    for (index_t c = 0; c < n; ++c)
+        for (index_t r = 0; r < m; ++r)
+            A(r, c) = static_cast<real_t>(10 * (r + 1) + (c + 1));
+
+    mat A0 = A.topRows(m);
+    std::cout << A0 << '\n';
+
+    using Conv = alpaqa::LinConstrConverter<config_t, index_t, index_t>;
+    auto num_bound_constr = Conv::count_bounds(C);
+    Conv::add_box_constr_to_constr_matrix_inplace(m, A, C);
+
+    std::cout << A << '\n';
+    EXPECT_EQ(num_bound_constr, static_cast<length_t>(bound_indices.size()));
+    EXPECT_THAT(A.bottomRows(m), EigenEqual(A0));
+    mat I = mat::Zero(num_bound_constr, n);
+    for (auto r = 0; index_t i : bound_indices)
+        I(r++, i) = 1;
+    EXPECT_THAT(A.topRows(num_bound_constr), EigenEqual(I));
+}
+
+TEST(LinConstrConverter, convertConstraintsDenseInPlaceVec) {
+    length_t n = 7, m = 9;
+    Box C(n);
+    std::vector<index_t> bound_indices{1, 3, 4, 6};
+    for (index_t i : bound_indices)
+        C.upperbound(i) = 1;
+
+    mat A = mat::Constant(m, n, -1);
+    for (index_t c = 0; c < n; ++c)
+        for (index_t r = 0; r < m; ++r)
+            A(r, c) = static_cast<real_t>(10 * (r + 1) + (c + 1));
+    mat A0 = A;
+    A.resize(m + 4, n);
+    A.reshaped() << A0.reshaped(), mat::Constant(4 * n, 1, -1);
+    std::cout << A << '\n';
+
+    using Conv = alpaqa::LinConstrConverter<config_t, index_t, index_t>;
+    auto num_bound_constr = Conv::count_bounds(C);
+    Conv::add_box_constr_to_constr_matrix_inplace_vec(m, n, A.reshaped(), C);
+
+    std::cout << A << '\n';
+    EXPECT_EQ(num_bound_constr, static_cast<length_t>(bound_indices.size()));
+    EXPECT_THAT(A.bottomRows(m), EigenEqual(A0));
+    mat I = mat::Zero(num_bound_constr, n);
+    for (auto r = 0; index_t i : bound_indices)
+        I(r++, i) = 1;
+    EXPECT_THAT(A.topRows(num_bound_constr), EigenEqual(I));
 }
