@@ -164,6 +164,8 @@ struct EigenConfig {
     using mindexvec = Eigen::Map<indexvec>;
     /// Immutable map of index vector type.
     using cmindexvec = Eigen::Map<const indexvec>;
+    /// Whether indexing by vectors of indices is supported.
+    static constexpr bool supports_indexvec = true;
 };
 
 /// Single-precision `float` configuration.

@@ -182,7 +182,9 @@ class BoxConstrProblem {
     }
 
     /// @see @ref TypeErasedProblem::eval_inactive_indices_res_lna
-    index_t eval_inactive_indices_res_lna(real_t γ, crvec x, crvec grad_ψ, rindexvec J) const {
+    index_t eval_inactive_indices_res_lna(real_t γ, crvec x, crvec grad_ψ, rindexvec J) const
+        requires config_t::supports_indexvec
+    {
         index_t nJ = 0;
         // Helper that adds i to index set J if x ∊ C
         const auto add_to_J_if_in_box_interior = [&](real_t x_fw, index_t i) {
