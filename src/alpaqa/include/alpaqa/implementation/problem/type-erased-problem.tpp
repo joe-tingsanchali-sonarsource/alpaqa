@@ -1,34 +1,34 @@
 #pragma once
 
 #include <alpaqa/problem/type-erased-problem.hpp>
+#include <stdexcept>
 
 namespace alpaqa {
 
 template <Config Conf>
 auto ProblemVTable<Conf>::calc_ŷ_dᵀŷ(const void *self, rvec g_ŷ, crvec y, crvec Σ,
                                      const ProblemVTable &vtable) -> real_t {
-    if (Σ.size() == 1) {
-        // ζ = g(x) + Σ⁻¹y
-        g_ŷ += (1 / Σ(0)) * y;
-        // d = ζ - Π(ζ, D)
-        vtable.eval_proj_diff_g(self, g_ŷ, g_ŷ);
-        // dᵀŷ, ŷ = Σ d
-        real_t dᵀŷ = Σ(0) * g_ŷ.dot(g_ŷ);
-        g_ŷ *= Σ(0);
-        return dᵀŷ;
-    } else {
-        // ζ = g(x) + Σ⁻¹y
-        g_ŷ += y.cwiseQuotient(Σ);
-        // d = ζ - Π(ζ, D)
-        vtable.eval_proj_diff_g(self, g_ŷ, g_ŷ);
-        // dᵀŷ, ŷ = Σ d
-        real_t dᵀŷ = 0;
-        for (index_t i = 0; i < y.size(); ++i) {
-            dᵀŷ += g_ŷ(i) * Σ(i) * g_ŷ(i); // TODO: vectorize
-            g_ŷ(i) = Σ(i) * g_ŷ(i);
+    if constexpr (requires { Σ(0); })
+        if (Σ.size() == 1) {
+            // ζ = g(x) + Σ⁻¹y
+            g_ŷ += (1 / Σ(0)) * y;
+            // d = ζ - Π(ζ, D)
+            vtable.eval_proj_diff_g(self, g_ŷ, g_ŷ);
+            // dᵀŷ, ŷ = Σ d
+            real_t dᵀŷ = Σ(0) * g_ŷ.dot(g_ŷ);
+            g_ŷ *= Σ(0);
+            return dᵀŷ;
         }
-        return dᵀŷ;
-    }
+    if (Σ.size() != y.size())
+        throw std::logic_error("Penalty/multiplier size mismatch");
+    // ζ = g(x) + Σ⁻¹y
+    g_ŷ += y.cwiseQuotient(Σ);
+    // d = ζ - Π(ζ, D)
+    vtable.eval_proj_diff_g(self, g_ŷ, g_ŷ);
+    // dᵀŷ, ŷ = Σ d
+    real_t dᵀŷ = g_ŷ.dot(Σ.cwiseProduct(g_ŷ));
+    g_ŷ        = Σ.cwiseProduct(g_ŷ);
+    return dᵀŷ;
 }
 
 template <Config Conf>

@@ -140,10 +140,10 @@ class BoxConstrProblem {
     real_t eval_prox_grad_step(real_t γ, crvec x, crvec grad_ψ, rvec x̂, rvec p) const {
         if (l1_reg.size() == 0)
             return eval_proj_grad_step_box(C, γ, x, grad_ψ, x̂, p);
-        else if (l1_reg.size() == 1)
-            return eval_prox_grad_step_box_l1_scal(C, l1_reg(0), γ, x, grad_ψ, x̂, p);
-        else
-            return eval_prox_grad_step_box_l1(C, l1_reg, γ, x, grad_ψ, x̂, p);
+        else if constexpr (requires { l1_reg(0); })
+            if (l1_reg.size() == 1)
+                return eval_prox_grad_step_box_l1_scal(C, l1_reg(0), γ, x, grad_ψ, x̂, p);
+        return eval_prox_grad_step_box_l1(C, l1_reg, γ, x, grad_ψ, x̂, p);
     }
 
     /// @see @ref TypeErasedProblem::eval_proj_diff_g
@@ -178,7 +178,11 @@ class BoxConstrProblem {
     /// @see @ref TypeErasedProblem::provides_get_box_C
     [[nodiscard]] bool provides_get_box_C() const {
         const auto nλ = l1_reg.size();
-        return nλ == 0 || (nλ == 1 && l1_reg(0) == 0);
+        if (nλ == 0)
+            return true;
+        if constexpr (requires { l1_reg(0); })
+            return (nλ == 1 && l1_reg(0) == 0);
+        return false;
     }
 
     /// @see @ref TypeErasedProblem::eval_inactive_indices_res_lna

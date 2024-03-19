@@ -6,6 +6,7 @@
 #endif
 
 #include <algorithm>
+#include <stdexcept>
 
 namespace alpaqa::detail {
 
@@ -19,21 +20,36 @@ struct ALMHelpers {
                                        real_t old_norm_e, rvec Σ) {
         const real_t θ = params.rel_penalty_increase_threshold;
         if (norm_e <= params.dual_tolerance) {
+            // Don't update the penalty factors if the constraint violation is
+            // already below the required tolerance.
             return;
         }
         if (params.single_penalty_factor) {
-            if (first_iter || norm_e > θ * old_norm_e) {
-                real_t new_Σ = std::fmin(params.max_penalty, Δ * Σ(0));
-                Σ.setConstant(new_Σ);
+            if constexpr (requires { Σ(0); }) {
+                if (first_iter || norm_e > θ * old_norm_e) {
+                    real_t new_Σ = std::fmin(params.max_penalty, Δ * Σ(0));
+                    Σ.setConstant(new_Σ);
+                }
+            } else {
+                throw std::logic_error("This configuration does not support "
+                                       "single-penalty parameter mode");
             }
         } else {
-            for (index_t i = 0; i < e.rows(); ++i) {
-                if (first_iter || std::abs(e(i)) > θ * std::abs(old_e(i))) {
-                    Σ(i) = std::fmin(
-                        params.max_penalty,
-                        std::fmax(Δ * std::abs(e(i)) / norm_e, real_t(1)) *
-                            Σ(i));
-                }
+            auto new_Σ = (e.cwiseAbs() * (Δ / norm_e))
+                             .cwiseMax(1)
+                             .cwiseProduct(Σ)
+                             .cwiseMin(params.max_penalty);
+            if (first_iter) {
+                // Update the penalty factors regardless of previous error
+                // (because we don't have the previous error yet).
+                // TODO: we could in theory evaluate it before the first
+                // iteration, the inner solver computes it anyway, but this may
+                // add unnecessary complexity.
+                Σ = new_Σ;
+            } else {
+                // Decide which constraints' penalty factors to increase.
+                auto incr = e.cwiseAbs().array() > θ * old_e.cwiseAbs().array();
+                Σ = incr.select(new_Σ, Σ);
             }
         }
     }
