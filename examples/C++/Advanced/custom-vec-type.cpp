@@ -13,10 +13,6 @@ struct CustomConfig {
     using cplx_t = std::complex<real_t>;
     /// Dynamic vector type.
     using vec = custom::CustomVector<real_t>;
-    /// Map of vector type.
-    using mvec = custom::CustomVectorView<real_t>;
-    /// Immutable map of vector type.
-    using cmvec = custom::CustomVectorView<const real_t>;
     /// Reference to mutable vector.
     using rvec = custom::CustomVectorView<real_t>;
     /// Reference to immutable vector.
@@ -29,6 +25,11 @@ struct CustomConfig {
 
     /// Dummy type to indicate that index vectors and matrices are unsupported.
     struct unsupported {};
+
+    /// Map of vector type.
+    using mvec = unsupported;
+    /// Immutable map of vector type.
+    using cmvec = unsupported;
 
     /// Dynamic vector of indices.
     using indexvec = unsupported;
@@ -68,6 +69,9 @@ struct CustomConfig {
 template <>
 struct alpaqa::is_config<CustomConfig> : std::true_type {};
 
+template <>
+inline const CustomConfig::vec alpaqa::null_vec<CustomConfig>{};
+
 USING_ALPAQA_CONFIG(CustomConfig);
 
 // Problem specification
@@ -89,30 +93,30 @@ struct Problem : alpaqa::BoxConstrProblem<config_t> {
         C.lowerbound = vec::Constant(n, -alpaqa::inf<config_t>);
         C.upperbound = vec::Constant(n, +alpaqa::inf<config_t>);
         D.lowerbound = vec::Constant(m, -alpaqa::inf<config_t>);
-        D.upperbound = cmvec{b.data(), b.size()};
+        D.upperbound = crvec{b.data(), b.size()};
     }
 
     // Evaluate the cost
     real_t eval_f(crvec x) const {
         Qx = Q * alpaqa::cmvec<alpaqa::EigenConfigd>{x.data(), x.size()};
-        return 0.5 * x.dot(cmvec{Qx.data(), Qx.size()});
+        return 0.5 * x.dot(crvec{Qx.data(), Qx.size()});
     }
     // Evaluat the gradient of the cost
     void eval_grad_f(crvec x, rvec gr) const {
         Qx = Q * alpaqa::cmvec<alpaqa::EigenConfigd>{x.data(), x.size()};
-        gr = cmvec{Qx.data(), Qx.size()};
+        gr = crvec{Qx.data(), Qx.size()};
     }
     // Evaluate the constraints
     void eval_g(crvec x, rvec g) const {
         Ax = A * alpaqa::cmvec<alpaqa::EigenConfigd>{x.data(), x.size()};
-        g  = cmvec{Ax.data(), Ax.size()};
+        g  = crvec{Ax.data(), Ax.size()};
     }
     // Evaluate a matrix-vector product with the gradient of the constraints
     void eval_grad_g_prod(crvec x, crvec y, rvec gr) const {
         (void)x;
         Qx = A.transpose() *
              alpaqa::cmvec<alpaqa::EigenConfigd>{y.data(), y.size()};
-        gr = cmvec{Qx.data(), Qx.size()};
+        gr = crvec{Qx.data(), Qx.size()};
     }
 };
 
