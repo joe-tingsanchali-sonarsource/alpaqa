@@ -8,9 +8,9 @@
 
 namespace alpaqa {
 
-template <Config Conf>
-bool LBFGS<Conf>::update_valid(const Params &params, real_t yᵀs, real_t sᵀs,
-                               real_t pᵀp) {
+template <Config Conf, class Storage>
+bool LBFGS<Conf, Storage>::update_valid(const Params &params, real_t yᵀs,
+                                        real_t sᵀs, real_t pᵀp) {
     // Check if this L-BFGS update is accepted
     if (sᵀs <= params.min_abs_s)
         return false;
@@ -33,9 +33,9 @@ bool LBFGS<Conf>::update_valid(const Params &params, real_t yᵀs, real_t sᵀs,
     return true;
 }
 
-template <Config Conf>
-bool LBFGS<Conf>::update_sy_impl(const auto &s, const auto &y,
-                                 real_t pₙₑₓₜᵀpₙₑₓₜ, bool forced) {
+template <Config Conf, class Storage>
+bool LBFGS<Conf, Storage>::update_sy_impl(const auto &s, const auto &y,
+                                          real_t pₙₑₓₜᵀpₙₑₓₜ, bool forced) {
     real_t yᵀs = y.dot(s);
     real_t ρ   = 1 / yᵀs;
     if (not forced) {
@@ -45,9 +45,9 @@ bool LBFGS<Conf>::update_sy_impl(const auto &s, const auto &y,
     }
 
     // Store the new s and y vectors
-    sto.s(idx) = s;
-    sto.y(idx) = y;
-    sto.ρ(idx) = ρ;
+    this->s(idx) = s;
+    this->y(idx) = y;
+    this->ρ(idx) = ρ;
 
     // Increment the index in the circular buffer
     idx = succ(idx);
@@ -56,22 +56,23 @@ bool LBFGS<Conf>::update_sy_impl(const auto &s, const auto &y,
     return true;
 }
 
-template <Config Conf>
-bool LBFGS<Conf>::update_sy(crvec s, crvec y, real_t pₙₑₓₜᵀpₙₑₓₜ, bool forced) {
+template <Config Conf, class Storage>
+bool LBFGS<Conf, Storage>::update_sy(crvec s, crvec y, real_t pₙₑₓₜᵀpₙₑₓₜ,
+                                     bool forced) {
     return update_sy_impl(s, y, pₙₑₓₜᵀpₙₑₓₜ, forced);
 }
 
-template <Config Conf>
-bool LBFGS<Conf>::update(crvec xₖ, crvec xₙₑₓₜ, crvec pₖ, crvec pₙₑₓₜ,
-                         Sign sign, bool forced) {
+template <Config Conf, class Storage>
+bool LBFGS<Conf, Storage>::update(crvec xₖ, crvec xₙₑₓₜ, crvec pₖ, crvec pₙₑₓₜ,
+                                  Sign sign, bool forced) {
     const auto s = xₙₑₓₜ - xₖ;
     const auto y = (sign == Sign::Positive) ? pₙₑₓₜ - pₖ : pₖ - pₙₑₓₜ;
     real_t pₙₑₓₜᵀpₙₑₓₜ = params.cbfgs ? pₙₑₓₜ.squaredNorm() : 0;
     return update_sy_impl(s, y, pₙₑₓₜᵀpₙₑₓₜ, forced);
 }
 
-template <Config Conf>
-bool LBFGS<Conf>::apply(rvec q, real_t γ) const {
+template <Config Conf, class Storage>
+bool LBFGS<Conf, Storage>::apply(rvec q, real_t γ) const {
     // Only apply if we have previous vectors s and y
     if (idx == 0 && not full)
         return false;
@@ -99,8 +100,9 @@ bool LBFGS<Conf>::apply(rvec q, real_t γ) const {
     return true;
 }
 
-template <Config Conf>
-bool LBFGS<Conf>::apply_masked_impl(rvec q, real_t γ, const auto &J) const {
+template <Config Conf, class Storage>
+bool LBFGS<Conf, Storage>::apply_masked_impl(rvec q, real_t γ,
+                                             const auto &J) const {
     // Only apply if we have previous vectors s and y
     if (idx == 0 && not full)
         return false;
@@ -192,25 +194,25 @@ bool LBFGS<Conf>::apply_masked_impl(rvec q, real_t γ, const auto &J) const {
     return true;
 }
 
-template <Config Conf>
-bool LBFGS<Conf>::apply_masked(rvec q, real_t γ, crindexvec J) const {
+template <Config Conf, class Storage>
+bool LBFGS<Conf, Storage>::apply_masked(rvec q, real_t γ, crindexvec J) const {
     return apply_masked_impl(q, γ, J);
 }
 
-template <Config Conf>
-bool LBFGS<Conf>::apply_masked(rvec q, real_t γ,
-                               const std::vector<index_t> &J) const {
+template <Config Conf, class Storage>
+bool LBFGS<Conf, Storage>::apply_masked(rvec q, real_t γ,
+                                        const std::vector<index_t> &J) const {
     return apply_masked_impl(q, γ, J);
 }
 
-template <Config Conf>
-void LBFGS<Conf>::reset() {
+template <Config Conf, class Storage>
+void LBFGS<Conf, Storage>::reset() {
     idx  = 0;
     full = false;
 }
 
-template <Config Conf>
-void LBFGS<Conf>::resize(length_t n) {
+template <Config Conf, class Storage>
+void LBFGS<Conf, Storage>::resize(length_t n) {
     if (params.memory < 1)
         throw std::invalid_argument("LBFGS::Params::memory must be >= 1");
     sto.resize(n, params.memory);
@@ -222,8 +224,8 @@ void LBFGSStorage<Conf>::resize(length_t n, length_t history) {
     sto.resize(n + 1, history * 2);
 }
 
-template <Config Conf>
-void LBFGS<Conf>::scale_y(real_t factor) {
+template <Config Conf, class Storage>
+void LBFGS<Conf, Storage>::scale_y(real_t factor) {
     if (full) {
         for (index_t i = 0; i < history(); ++i) {
             y(i) *= factor;

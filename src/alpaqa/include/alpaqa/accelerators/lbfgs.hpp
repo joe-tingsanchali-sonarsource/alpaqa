@@ -113,7 +113,7 @@ struct LBFGSStorage {
 
 /// Limited memory Broyden–Fletcher–Goldfarb–Shanno (L-BFGS) algorithm
 /// @ingroup grp_Accelerators
-template <Config Conf = DefaultConfig>
+template <Config Conf = DefaultConfig, class Storage = LBFGSStorage<Conf>>
 class LBFGS {
   public:
     USING_ALPAQA_CONFIG(Conf);
@@ -220,7 +220,7 @@ class LBFGS {
     }
 
   private:
-    LBFGSStorage<config_t> sto;
+    Storage sto;
     index_t idx = 0;
     bool full   = false;
     Params params;
