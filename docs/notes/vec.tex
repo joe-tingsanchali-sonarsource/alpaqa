@@ -1,0 +1,101 @@
+\documentclass{article}
+\usepackage{geometry}
+\usepackage{array}
+\usepackage{listings}
+\usepackage{courier}
+
+\geometry{a4paper, margin=1.6cm}
+\lstset{basicstyle=\ttfamily}
+
+\begin{document}
+
+\title{\textsc{Alpaqa} vector type requirements}
+\author{}
+\date{}
+\maketitle
+
+\section*{Functions Summary}
+
+\subsection*{Owning vector type \texttt{vec}}
+
+\begin{tabular}{|p{7.2cm}|p{5.8cm}|p{0.95cm}|p{1.15cm}|}
+\hline
+\textbf{Function} & \textbf{Description} & \textbf{Arity} & \textbf{Type}\\\hline
+\lstinline|vec()| & Default constructor. & & \\\hline
+\lstinline|vec(index)| & Constructor. & & \\\hline
+\lstinline|vec::Zero(index) -> xvec| & Zero expression. & & \\\hline
+\lstinline|vec::Ones(index) -> xvec| & One expression. & & \\\hline
+\lstinline|vec::resize(index)| & Destructive resize. & & \\\hline
+All \lstinline|rvec| functions & & & \\\hline
+\end{tabular}
+
+\subsection*{Mutable vector view type \texttt{rvec}}
+\begin{tabular}{|p{7.2cm}|p{5.8cm}|p{0.95cm}|p{1.15cm}|}
+\hline
+\textbf{Function} & \textbf{Description} & \textbf{Arity} & \textbf{Type}\\\hline
+\lstinline|rvec::setConstant(scalar)| & Set all to constant. & & Parfor \\\hline
+\lstinline|rvec::setZero()| & Set all to zero. & & Parfor \\\hline
+\lstinline|rvec::operator=(xvec)| & Assignment. & 2 & Parfor \\\hline
+\lstinline|rvec::operator+=(xvec) -> rvec| & Compound element-wise addition. & 2 & Parfor \\\hline
+\lstinline|rvec::operator-=(expr) -> rvec| & Compound element-wise subtraction. & 2 & Parfor \\\hline
+\lstinline|rvec::operator*=(scalar) -> rvec| & Compound multiplication by scalar. & 2 & Parfor \\\hline
+\lstinline|rvec::operator/=(scalar) -> rvec| & Compound division by scalar. & 2 & Parfor \\\hline
+\lstinline|rvec::topRows(index) -> rvec| & Returns top \textit{n} rows. & & \\\hline
+\lstinline|rvec::bottomRows(index) -> rvec| & Returns bottom \textit{n} rows. & & \\\hline
+All \lstinline|xvec| functions & & & \\\hline
+\end{tabular}
+
+\subsection*{Vector expression types \texttt{xvec} (expression templates)}
+\begin{tabular}{|p{7.2cm}|p{5.8cm}|p{0.95cm}|p{1.15cm}|}
+\hline
+\textbf{Function} & \textbf{Description} & \textbf{Arity} & \textbf{Type}\\\hline
+\lstinline|xvec::size() -> index| & Number of elements. & & \\\hline
+\lstinline|xvec::operator+(xvec) -> xvec| & Element-wise addition. & 2 & Parfor \\\hline
+\lstinline|xvec::operator-(xvec) -> xvec| & Element-wise subtraction. & 2 & Parfor \\\hline
+\lstinline|xvec::operator-() -> xvec| & Element-wise negation. & 1 & Parfor \\\hline
+\lstinline|xvec::cwiseProduct(xvec) -> xvec| & Element-wise multiplication. & 2 & Parfor \\\hline
+\lstinline|xvec::operator*(scalar) -> xvec| & Multiplication by scalar. & 2 & Parfor \\\hline
+\lstinline|operator*(scalar, xvec) -> xvec| & Multiplication by scalar. & 2 & Parfor \\\hline
+\lstinline|xvec::cwiseQuotient(xvec) -> xvec| & Element-wise division. & 2 & Parfor \\\hline
+\lstinline|xvec::operator/(scalar) -> xvec| & Division by scalar. & 2 & Parfor \\\hline
+\lstinline|xvec::cwiseMax(xvec) -> xvec| & Element-wise maximum. & 2 & Parfor \\\hline
+\lstinline|xvec::cwiseMin(xvec) -> xvec| & Element-wise minimum. & 2 & Parfor \\\hline
+\lstinline|xvec::cwiseMax(scalar) -> xvec| & Element-wise maximum. & 2 & Parfor \\\hline
+\lstinline|xvec::cwiseMin(scalar) -> xvec| & Element-wise minimum. & 2 & Parfor \\\hline
+\lstinline|xvec::cwiseAbs() -> xvec| & Element-wise absolute value. & 1 & Parfor \\\hline
+\lstinline|xvec::operator==(xvec) -> bool| & Equality. & 2 & Reduce \\\hline
+\lstinline|xvec::operator!=(xvec) -> bool| & Inequality. & 2 & Reduce \\\hline
+\lstinline|xvec::allFinite() -> bool| & Checks if all elements are finite. & 1 & Reduce \\\hline
+\lstinline|xvec::dot(xvec) -> scalar| & Inner product. & 2 & Reduce \\\hline
+\lstinline|xvec::squaredNorm() -> scalar| & Square of the 2-norm. & 1 & Reduce \\\hline
+\lstinline|xvec::norm() -> scalar| & 2-norm. & 1 & Reduce \\\hline
+\lstinline|norm_1(xvec) -> scalar| & 1-norm. & 1 & Reduce \\\hline
+\lstinline|norm_inf(xvec) -> scalar| & $\infty$-norm. & 1 & Reduce \\\hline
+\lstinline|xvec::array() -> xarray| & View as element-wise array. & & \\\hline
+\lstinline|xvec::topRows(index) -> xvec| & Returns top \textit{n} rows. & & \\\hline
+\lstinline|xvec::bottomRows(index) -> xvec| & Returns bottom \textit{n} rows. & & \\\hline
+\end{tabular}
+
+\subsection*{Logical vector expression types \texttt{lvec} (expression templates)}
+\begin{tabular}{|p{7.2cm}|p{5.8cm}|p{0.95cm}|p{1.15cm}|}
+\hline
+\textbf{Function} & \textbf{Description} & \textbf{Arity} & \textbf{Type}\\\hline
+\lstinline|lvec::select(xvec, xvec) -> xvec| & Conditional. & 3 & Parfor \\\hline
+\end{tabular}
+
+\subsection*{Element-wise view \texttt{xarray} (expression templates)}
+\begin{tabular}{|p{7.2cm}|p{5.8cm}|p{0.95cm}|p{1.15cm}|}
+\hline
+\textbf{Function} & \textbf{Description} & \textbf{Arity} & \textbf{Type}\\\hline
+\lstinline|xarray::operator==(xvec) -> lvec| & Element-wise equality. & 2 & Parfor \\\hline
+\lstinline|xarray::operator!=(xvec) -> lvec| & Element-wise inequality. & 2 & Parfor \\\hline
+\lstinline|xarray::operator<(scalar) -> lvec| & Element-wise less than scalar. & 2 & Parfor \\\hline
+\lstinline|xarray::operator<(xarray) -> lvec| & Element-wise less than. & 2 & Parfor \\\hline
+\lstinline|xarray::operator<=(xarray) -> lvec| & Element-wise less than or equal. & 2 & Parfor \\\hline
+\lstinline|xarray::operator>(scalar) -> lvec| & Element-wise greater than scalar. & 2 & Parfor \\\hline
+\lstinline|xarray::operator>(xarray) -> lvec| & Element-wise greater than. & 2 & Parfor \\\hline
+\lstinline|xarray::operator>=(xarray) -> lvec| & Element-wise greater than or equal. & 2 & Parfor \\\hline
+\end{tabular}
+
+
+\end{document}
