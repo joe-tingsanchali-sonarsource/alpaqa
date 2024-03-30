@@ -724,7 +724,7 @@ void register_problems(py::module_ &m) {
         "problem"_a, "Returns a string representing the functions provided by the problem.");
 
     using KKTError = alpaqa::KKTError<config_t>;
-    py::class_<KKTError>(m, "KKTError", "C++ documentation: :cpp:class:`alpaqa:::KKTError`")
+    py::class_<KKTError>(m, "KKTError", "C++ documentation: :cpp:class:`alpaqa::KKTError`")
         .def_readwrite("stationarity", &KKTError::stationarity)
         .def_readwrite("constr_violation", &KKTError::constr_violation)
         .def_readwrite("complementarity", &KKTError::complementarity)
