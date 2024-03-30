@@ -1,4 +1,5 @@
 #include <alpaqa/config/config.hpp>
+#include <alpaqa/problem/kkt-error.hpp>
 #include <alpaqa-python/export.h>
 #include <pybind11/eigen.h>
 #include <pybind11/functional.h>
@@ -721,6 +722,16 @@ void register_problems(py::module_ &m) {
             return os.str();
         },
         "problem"_a, "Returns a string representing the functions provided by the problem.");
+
+    using KKTError = alpaqa::KKTError<config_t>;
+    py::class_<KKTError>(m, "KKTError", "C++ documentation: :cpp:class:`alpaqa:::KKTError`")
+        .def_readwrite("stationarity", &KKTError::stationarity)
+        .def_readwrite("constr_violation", &KKTError::constr_violation)
+        .def_readwrite("complementarity", &KKTError::complementarity)
+        .def_readwrite("bounds_violation", &KKTError::bounds_violation);
+    m.def("kkt_error", [](const TEProblem &problem, crvec x, crvec y) {
+        return alpaqa::compute_kkt_error(problem, x, y);
+    });
 
     // Must be last
     te_problem.def(py::init([](py::object o) { return TEProblem::template make<PyProblem>(o); }),
