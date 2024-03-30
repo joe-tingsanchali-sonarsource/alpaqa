@@ -11,7 +11,7 @@ installed using the included `install-eigen.sh` script. Eigen is installed into
 the `staging` directory.
 
 ```sh
-./scripts/install-eigen.sh "$PWD/staging RelWithDebInfo"
+./scripts/install-eigen.sh "$PWD/staging" "RelWithDebInfo"
 ```
 
 ## SDK and cross-compiler
