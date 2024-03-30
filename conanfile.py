@@ -70,7 +70,7 @@ class AlpaqaRecipe(ConanFile):
         self.requires("eigen/3.4.0", transitive_headers=True)
         self.test_requires("gtest/1.11.0")
         if self.options.with_external_casadi:
-            self.requires("casadi/3.6.4@alpaqa", transitive_headers=True)
+            self.requires("casadi/3.6.5@alpaqa", transitive_headers=True)
         if self.options.with_json:
             self.requires("nlohmann_json/3.11.2", transitive_headers=True)
         if self.options.with_python:
