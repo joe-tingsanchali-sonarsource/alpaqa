@@ -12,7 +12,9 @@
 #include <utility>
 #include <vector>
 
-namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi {
+namespace alpaqa {
+BEGIN_ALPAQA_CASADI_LOADER_NAMESPACE
+namespace casadi {
 
 /// Class that loads and calls pre-compiled CasADi functions in a DLL/SO file.
 /// Designed to match (part of) the `casadi::Function` API.
@@ -118,4 +120,6 @@ inline const casadi_int *Function::Sparsity::colind() const {
 CASADI_LOADER_EXPORT Function external(const std::string &name,
                                        const std::string &bin_name);
 
-} // namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi
+} // namespace casadi
+END_ALPAQA_CASADI_LOADER_NAMESPACE
+} // namespace alpaqa

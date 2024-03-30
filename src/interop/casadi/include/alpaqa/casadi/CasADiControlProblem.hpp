@@ -8,7 +8,8 @@
 #include <alpaqa/util/copyable_unique_ptr.hpp>
 #include <filesystem>
 
-namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE {
+namespace alpaqa {
+BEGIN_ALPAQA_CASADI_LOADER_NAMESPACE
 
 namespace casadi_loader {
 template <Config>
@@ -180,5 +181,5 @@ class CasADiControlProblem {
 
 CASADI_OCP_LOADER_EXPORT_EXTERN_TEMPLATE(class, CasADiControlProblem,
                                          EigenConfigd);
-
-} // namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE
+END_ALPAQA_CASADI_LOADER_NAMESPACE
+} // namespace alpaqa

@@ -21,7 +21,8 @@
 #include <stdexcept>
 #include <type_traits>
 
-namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE {
+namespace alpaqa {
+BEGIN_ALPAQA_CASADI_LOADER_NAMESPACE
 
 namespace fs = std::filesystem;
 
@@ -660,4 +661,5 @@ void CasADiControlProblem<Conf>::eval_add_gn_hess_constr_N(crvec x, crvec M,
         };
 }
 
-} // namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE
+END_ALPAQA_CASADI_LOADER_NAMESPACE
+} // namespace alpaqa

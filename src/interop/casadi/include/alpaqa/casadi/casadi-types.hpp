@@ -6,7 +6,8 @@
 
 #include "casadi-namespace.hpp"
 
-namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE {
+namespace alpaqa {
+BEGIN_ALPAQA_CASADI_LOADER_NAMESPACE
 
 #ifndef casadi_int
 using casadi_int = long long int;
@@ -36,4 +37,5 @@ struct ExternalFunction {
 
 } // namespace casadi
 
-} // namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE
+END_ALPAQA_CASADI_LOADER_NAMESPACE
+} // namespace alpaqa

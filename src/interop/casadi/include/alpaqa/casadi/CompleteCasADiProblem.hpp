@@ -2,7 +2,9 @@
 #include <alpaqa/casadi/CasADiProblem.hpp>
 #include <alpaqa/casadi/casadi-namespace.hpp>
 
-namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi_loader {
+namespace alpaqa {
+BEGIN_ALPAQA_CASADI_LOADER_NAMESPACE
+namespace casadi_loader {
 
 /// Convert the map of strings to a map of CasADi functions.
 CasADiFunctions CASADI_LOADER_EXPORT
@@ -13,4 +15,6 @@ deserialize_problem(const SerializedCasADiFunctions &functions);
 /// @ref CasADiProblem.
 void CASADI_LOADER_EXPORT complete_problem(CasADiFunctions &functions);
 
-} // namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi_loader
+} // namespace casadi_loader
+END_ALPAQA_CASADI_LOADER_NAMESPACE
+} // namespace alpaqa

@@ -15,7 +15,9 @@
 #include <alpaqa/casadi/casadi-external-function.hpp>
 #endif
 
-namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi_loader {
+namespace alpaqa {
+BEGIN_ALPAQA_CASADI_LOADER_NAMESPACE
+namespace casadi_loader {
 
 struct CASADI_LOADER_EXPORT invalid_argument_dimensions
     : std::invalid_argument {
@@ -140,4 +142,6 @@ class CasADiFunctionEvaluator {
 #endif
 };
 
-} // namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi_loader
+} // namespace casadi_loader
+END_ALPAQA_CASADI_LOADER_NAMESPACE
+} // namespace alpaqa

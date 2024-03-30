@@ -1,11 +1,14 @@
 #pragma once
 
+#include "casadi-namespace.hpp"
 #include "casadi-types.hpp"
 
 #include <alpaqa/util/dl.hpp>
 #include <cassert>
 
-namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi {
+namespace alpaqa {
+BEGIN_ALPAQA_CASADI_LOADER_NAMESPACE
+namespace casadi {
 
 // clang-format off
 using fname_incref       = ExternalFunction<"_incref", void(void)>;
@@ -33,4 +36,6 @@ auto ExternalFunction<Nm, Sgn>::load(void *handle, std::string fname)
     return func;
 }
 
-} // namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi
+} // namespace casadi
+END_ALPAQA_CASADI_LOADER_NAMESPACE
+} // namespace alpaqa

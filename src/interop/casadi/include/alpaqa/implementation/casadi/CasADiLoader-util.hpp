@@ -16,7 +16,9 @@
 #include <alpaqa/casadi/casadi-types.hpp>
 #endif
 
-namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi_loader {
+namespace alpaqa {
+BEGIN_ALPAQA_CASADI_LOADER_NAMESPACE
+namespace casadi_loader {
 
 template <class Loader, class F>
 auto wrap_load(Loader &&loader, const char *name, F f) {
@@ -62,4 +64,6 @@ inline constexpr auto dims(auto... a) {
         return std::array{dim{a, 1}...};
 }
 
-} // namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi_loader
+} // namespace casadi_loader
+END_ALPAQA_CASADI_LOADER_NAMESPACE
+} // namespace alpaqa

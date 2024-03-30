@@ -19,7 +19,8 @@
 #include <optional>
 #include <stdexcept>
 
-namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE {
+namespace alpaqa {
+BEGIN_ALPAQA_CASADI_LOADER_NAMESPACE
 
 namespace fs = std::filesystem;
 
@@ -519,4 +520,5 @@ std::string CasADiProblem<Conf>::get_name() const {
     return name;
 }
 
-} // namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE
+END_ALPAQA_CASADI_LOADER_NAMESPACE
+} // namespace alpaqa

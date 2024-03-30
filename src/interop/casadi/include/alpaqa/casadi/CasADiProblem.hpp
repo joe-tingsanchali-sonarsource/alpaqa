@@ -19,7 +19,8 @@ class Function;
 #include <alpaqa/casadi/casadi-external-function.hpp>
 #endif
 
-namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE {
+namespace alpaqa {
+BEGIN_ALPAQA_CASADI_LOADER_NAMESPACE
 namespace casadi_loader {
 template <Config>
 struct CasADiFunctionsWithParam;
@@ -72,13 +73,13 @@ class CasADiProblem : public BoxConstrProblem<Conf> {
 
     /// Load the numerical problem data (bounds and parameters) from a CSV file.
     /// The file should contain 7 rows, with the following contents:
-    ///   1. @ref C lower bound [n]
-    ///   2. @ref C upper bound [n]
-    ///   3. @ref D lower bound [m]
-    ///   4. @ref D upper bound [m]
+    ///   1. @ref BoxConstrProblem::C lower bound [n]
+    ///   2. @ref BoxConstrProblem::C upper bound [n]
+    ///   3. @ref BoxConstrProblem::D lower bound [m]
+    ///   4. @ref BoxConstrProblem::D upper bound [m]
     ///   5. @ref param [p]
-    ///   6. @ref l1_reg [0, 1 or n]
-    ///   7. @ref penalty_alm_split [1]
+    ///   6. @ref BoxConstrProblem::l1_reg [0, 1 or n]
+    ///   7. @ref BoxConstrProblem::penalty_alm_split [1]
     ///
     /// Line endings are encoded using a single line feed (`\n`), and the column
     /// separator can be specified using the @p sep argument.
@@ -137,4 +138,5 @@ class CasADiProblem : public BoxConstrProblem<Conf> {
 
 CASADI_LOADER_EXPORT_EXTERN_TEMPLATE(class, CasADiProblem, EigenConfigd);
 
-} // namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE
+END_ALPAQA_CASADI_LOADER_NAMESPACE
+} // namespace alpaqa

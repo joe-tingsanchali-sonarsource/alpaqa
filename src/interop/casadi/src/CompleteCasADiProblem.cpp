@@ -5,13 +5,15 @@
 #include <alpaqa/implementation/casadi/CasADiLoader-util.hpp>
 #include <casadi/casadi.hpp>
 
-namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi_loader {
+namespace alpaqa {
+BEGIN_ALPAQA_CASADI_LOADER_NAMESPACE
+namespace casadi_loader {
 
 template <class F>
 auto wrap(const char *name, F f) {
     try {
         return f();
-    } catch (const casadi_loader::invalid_argument_dimensions &e) {
+    } catch (const invalid_argument_dimensions &e) {
         throw std::invalid_argument(
             "Unable to load function '" + std::string(name) +
             "': " + demangled_typename(typeid(e)) + ": " + e.what());
@@ -72,4 +74,6 @@ void complete_problem(CasADiFunctions &functions) {
         complete_constraints(g->second);
 }
 
-} // namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi_loader
+} // namespace casadi_loader
+END_ALPAQA_CASADI_LOADER_NAMESPACE
+} // namespace alpaqa

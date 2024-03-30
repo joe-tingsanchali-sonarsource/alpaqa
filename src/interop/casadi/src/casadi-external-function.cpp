@@ -2,7 +2,9 @@
 #include <alpaqa/casadi/casadi-namespace.hpp>
 #include <alpaqa/util/dl.hpp>
 
-namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi {
+namespace alpaqa {
+BEGIN_ALPAQA_CASADI_LOADER_NAMESPACE
+namespace casadi {
 
 void Function::load(void *so_handle, const std::string &func_name) {
     functions = {
@@ -88,4 +90,6 @@ Function external(const std::string &name, const std::string &bin_name) {
     return Function{util::load_lib(std::filesystem::path{bin_name}), name};
 }
 
-} // namespace alpaqa::inline ALPAQA_CASADI_LOADER_NAMESPACE::casadi
+} // namespace casadi
+END_ALPAQA_CASADI_LOADER_NAMESPACE
+} // namespace alpaqa
