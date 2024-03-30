@@ -17,7 +17,10 @@ template <Config Conf, class Weight = typename Conf::real_t>
     requires(std::is_same_v<Weight, typename Conf::real_t> ||
              std::is_same_v<Weight, typename Conf::vec> ||
              std::is_same_v<Weight, typename Conf::rvec> ||
-             std::is_same_v<Weight, typename Conf::crvec>)
+             std::is_same_v<Weight, typename Conf::crvec> ||
+             std::is_same_v<Weight, typename Conf::mat> ||
+             std::is_same_v<Weight, typename Conf::rmat> ||
+             std::is_same_v<Weight, typename Conf::crmat>)
 struct L1Norm {
     USING_ALPAQA_CONFIG(Conf);
     using weight_t                      = Weight;
@@ -85,7 +88,10 @@ template <Config Conf, class Weight = typename Conf::real_t>
     requires(std::is_same_v<Weight, typename Conf::real_t> ||
              std::is_same_v<Weight, typename Conf::vec> ||
              std::is_same_v<Weight, typename Conf::rvec> ||
-             std::is_same_v<Weight, typename Conf::crvec>)
+             std::is_same_v<Weight, typename Conf::crvec> ||
+             std::is_same_v<Weight, typename Conf::mat> ||
+             std::is_same_v<Weight, typename Conf::rmat> ||
+             std::is_same_v<Weight, typename Conf::crmat>)
 struct L1NormComplex {
     USING_ALPAQA_CONFIG(Conf);
     using weight_t                      = Weight;
@@ -128,7 +134,7 @@ struct L1NormComplex {
                 return mag2 <= γλ * γλ ? 0 : x * (1 - γλ / std::sqrt(mag2));
             };
             out = in.unaryExpr(soft_thres);
-            return λ * norm_1(out);
+            return λ * norm_1(out.reshaped());
         } else {
             if constexpr (std::is_same_v<weight_t, vec>)
                 if (λ.size() == 0)
@@ -142,7 +148,7 @@ struct L1NormComplex {
                 return mag2 <= γλ * γλ ? 0 : x * (1 - γλ / std::sqrt(mag2));
             };
             out = in.binaryExpr(λ, soft_thres);
-            return norm_1(out.cwiseProduct(λ));
+            return norm_1(out.cwiseProduct(λ).reshaped());
         }
     }
 
