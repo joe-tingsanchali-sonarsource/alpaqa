@@ -22,7 +22,8 @@ void register_inner_solver(py::module_ &m) {
         .def_property_readonly("name", &InnerSolver::get_name)
         .def("stop", &InnerSolver::stop)
         .def("__str__",
-             [](const InnerSolver &self) { return "InnerSolver<" + self.get_name() + ">"; });
+             [](const InnerSolver &self) { return "InnerSolver<" + self.get_name() + ">"; })
+        .def_property_readonly("params", &InnerSolver::get_params);
     inner_solver_class<InnerSolver>.initialize(std::move(inner_solver));
 
 #if ALPAQA_WITH_OCP

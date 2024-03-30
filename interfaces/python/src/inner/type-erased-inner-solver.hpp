@@ -26,12 +26,18 @@ struct InnerSolverVTable : util::BasicVTable {
         stop = nullptr;
     required_function_t<std::string() const>
         get_name = nullptr;
+    required_function_t<py::object() const>
+        get_params = nullptr;
     // clang-format on
 
     template <class T>
     InnerSolverVTable(std::in_place_t, T &t) : util::BasicVTable{std::in_place, t} {
         stop     = util::type_erased_wrapped<T, &T::stop>();
         get_name = util::type_erased_wrapped<T, &T::get_name>();
+        get_params = [](const void *self_) -> py::object {
+            auto &self = *std::launder(reinterpret_cast<const T *>(self_));
+            return py::cast(self.get_params());
+        };
         call     = []<class... Args>(void *self_, const Problem &p, Args... args) {
             auto &self = *std::launder(reinterpret_cast<T *>(self_));
             return Stats{self(p, std::forward<Args>(args)...)};
@@ -69,6 +75,7 @@ class TypeErasedInnerSolver
     }
     decltype(auto) stop() { return call(vtable.stop); }
     decltype(auto) get_name() const { return call(vtable.get_name); }
+    decltype(auto) get_params() const { return call(vtable.get_params); }
 };
 
 } // namespace alpaqa

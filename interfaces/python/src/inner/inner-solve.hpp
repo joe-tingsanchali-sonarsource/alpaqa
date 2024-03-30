@@ -67,7 +67,8 @@ void register_inner_solver_methods(py::class_<Solver> &cls) {
             "asynchronous"_a = true, "suppress_interrupt"_a = false, checked_inner_solve_doc())
         .def_property_readonly("name", &Solver::get_name)
         .def("stop", &Solver::stop)
-        .def("__str__", &Solver::get_name);
+        .def("__str__", &Solver::get_name)
+        .def_property_readonly("params", &Solver::get_params);
     if constexpr (requires { &Solver::set_progress_callback; })
         cls.def(
             "set_progress_callback", &Solver::set_progress_callback, "callback"_a,
