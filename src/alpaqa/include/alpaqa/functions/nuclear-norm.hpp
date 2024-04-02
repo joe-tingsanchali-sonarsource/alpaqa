@@ -51,11 +51,20 @@ struct NuclearNorm {
         if (rows == 0 || cols == 0) { // dynamic size
             assert(in.rows() == out.rows());
             assert(in.cols() == out.cols());
+#if EIGEN_VERSION_AT_LEAST(3, 4, 1)
             svd.compute(in);
+#else
+            svd.compute(in, Eigen::ComputeThinU | Eigen::ComputeThinV);
+#endif
         } else { // fixed size
             assert(in.size() == rows * cols);
             assert(out.size() == rows * cols);
+#if EIGEN_VERSION_AT_LEAST(3, 4, 1)
             svd.compute(in.reshaped(rows, cols));
+#else
+            svd.compute(in.reshaped(rows, cols),
+                        Eigen::ComputeThinU | Eigen::ComputeThinV);
+#endif
         }
         const length_t n = svd.singularValues().size();
         auto step        = vec::Constant(n, λ * γ);
