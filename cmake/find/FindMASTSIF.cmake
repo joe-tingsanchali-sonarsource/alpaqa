@@ -85,5 +85,26 @@ function(cutest_sif_problem PROBLEM_NAME)
             COMMAND ${CMAKE_COMMAND}
                 ARGS -E copy "${PROBLEM_DIR}/OUTSDIF.d"
                     "$<TARGET_FILE_DIR:cutest-problem-${FULL_PROBLEM_NAME}>")
+        get_target_property(CUTEST_LIB CUTEst::cutest IMPORTED_LOCATION)
+        if (CUTEST_LIB MATCHES "\\.a$")
+            set(VERSION_SCRIPT "${CMAKE_CURRENT_BINARY_DIR}/${FULL_PROBLEM_NAME}-export.lds")
+            file(WRITE ${VERSION_SCRIPT}
+                "{\n"
+                "  global:\n"
+                "    group_;\n"
+                "    range_;\n"
+                "    elfun_;\n"
+                "    fortran_close_;\n"
+                "    fortran_open_;\n"
+                "    cutest_*_;\n"
+                "    _init;\n"
+                "    _fini;\n"
+                "  local:\n"
+                "    *;\n"
+                "};")
+            target_link_options(cutest-problem-${FULL_PROBLEM_NAME} PRIVATE
+                "LINKER:-whole-archive,${CUTEST_LIB},-no-whole-archive"
+                "LINKER:--version-script=${VERSION_SCRIPT}")
+        endif()
     endif()
 endfunction()

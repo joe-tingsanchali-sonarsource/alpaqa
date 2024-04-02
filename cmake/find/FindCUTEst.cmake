@@ -12,9 +12,18 @@ if (CUTEST_INCLUDE_DIR)
     set(CUTEST_DIR ${CUTEST_DIR} CACHE PATH "")
 endif()
 
+option(CUTEST_SHARED "Link to libcutest.so instead of libcutest.a. \
+Results in smaller PROBLEM.so file, but makes it so only one CUTEst \
+problem can be loaded at once." Off)
+if (CUTEST_SHARED)
+    set(CUTEST_LIBRARY_NAMES libcutest.so cutest)
+else()
+    set(CUTEST_LIBRARY_NAMES libcutest.a)
+endif()
+
 find_library(CUTEST_LIBRARY
     NAMES
-        libcutest.so cutest
+        ${CUTEST_LIBRARY_NAMES}
     HINTS
         ${CUTEST_DIR}
     PATH_SUFFIXES
@@ -40,11 +49,10 @@ endif()
 if (CUTEst_FOUND AND NOT TARGET CUTEst::cutest)
     add_library(CUTEst::cutest UNKNOWN IMPORTED)
     set_target_properties(CUTEst::cutest PROPERTIES
-        IMPORTED_LOCATION ${CUTEST_LIBRARY}
-        IMPORTED_SONAME "libcutest.so")
-    if (CUTEST_LIBRARY MATCHES ".a$")
-        target_link_options(CUTEst::cutest INTERFACE
-            LINKER:-whole-archive,${CUTEST_LIBRARY},-no-whole-archive)
+        IMPORTED_LOCATION ${CUTEST_LIBRARY})
+    if (CUTEST_LIBRARY MATCHES "\\.so$")
+        set_target_properties(CUTEst::cutest PROPERTIES
+            IMPORTED_SONAME "libcutest.so")
     endif()
     target_link_libraries(CUTEst::cutest INTERFACE CUTEst::headers)
 endif()

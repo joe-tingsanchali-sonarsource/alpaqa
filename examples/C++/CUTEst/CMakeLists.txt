@@ -60,7 +60,7 @@ foreach(PROBLEM IN LISTS PROBLEMS_QP_MM)
 endforeach()
 
 get_target_property(CUTEST_LIB CUTEst::cutest IMPORTED_LOCATION)
-if (CUTEST_LIBRARY MATCHES ".so$")
+if (CUTEST_LIB MATCHES "\\.so$")
     install(FILES ${CUTEST_LIB}
             DESTINATION ${ALPAQA_INSTALL_LIBDIR}/CUTEst
             COMPONENT cutest)
