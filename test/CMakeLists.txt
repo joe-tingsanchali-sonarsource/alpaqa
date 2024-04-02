@@ -60,7 +60,8 @@ if (TARGET alpaqa::casadi-loader)
                 $<TARGET_FILE_DIR:rosenbrock_functions_test>)
 endif()
 
-option(ALPAQA_FORCE_TEST_DISCOVERY Off)
+option(ALPAQA_FORCE_TEST_DISCOVERY
+    "Query the test executable even when cross-compiling" Off)
 if (NOT CMAKE_CROSSCOMPILING OR ALPAQA_FORCE_TEST_DISCOVERY)
     gtest_discover_tests(tests DISCOVERY_TIMEOUT 60)
 endif()
