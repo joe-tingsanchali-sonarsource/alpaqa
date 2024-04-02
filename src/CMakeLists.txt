@@ -120,7 +120,6 @@ target_include_directories(alpaqa PUBLIC
     $<BUILD_INTERFACE:${CMAKE_CURRENT_BINARY_DIR}/export>)
 
 # Build time
-message(STATUS "Configuration time ${CONFIG_TIME}")
 if (ALPAQA_WITH_ACCURATE_BUILD_TIME)
     set(ALPAQA_BUILD_TIME_CPP "${CMAKE_CURRENT_BINARY_DIR}/alpaqa-build-time.cpp")
     add_custom_target(alpaqa-build-time-generate
