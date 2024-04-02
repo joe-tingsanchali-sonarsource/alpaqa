@@ -24,30 +24,8 @@ if [ ! -d "$pfx/qpalm" ]; then
     mv "$pfx/QPALM-1.2.2-Linux" "$pfx/qpalm"
 fi
 
-# Use ccache to cache compilation
-export CMAKE_C_COMPILER_LAUNCHER=ccache
-export CMAKE_CXX_COMPILER_LAUNCHER=ccache
-# Compile for this system's processor for optimal performance
-export CFLAGS="-march=native -fdiagnostics-color"
-export CXXFLAGS="-march=native -fdiagnostics-color"
-export FCFLAGS="-march=native -fdiagnostics-color"
-
 # Configure
-cmake -S. -Bbuild-local \
-    --toolchain "$pfx/$triple.toolchain.cmake" \
-    -DCMAKE_PREFIX_PATH="$pfx/mumps/usr/local;$pfx/ipopt/usr/local" \
-    -DCMAKE_FIND_ROOT_PATH="$pfx/eigen;$pfx/casadi;$pfx/openblas;$pfx/mumps;$pfx/ipopt;$pfx/qpalm" \
-    -DCMAKE_POSITION_INDEPENDENT_CODE=On \
-    -DBUILD_SHARED_LIBS=On \
-    -DALPAQA_WITH_DRIVERS=On \
-    -DALPAQA_WITH_EXAMPLES=Off \
-    -DALPAQA_WITH_TESTS=Off \
-    -DALPAQA_WITH_CUTEST=On \
-    -DALPAQA_WITH_QPALM=On \
-    -DALPAQA_WITH_IPOPT=On \
-    -DALPAQA_WITH_PYTHON=Off \
-    -DCMAKE_STAGING_PREFIX="$PWD/staging" \
-    -G "Ninja Multi-Config"
+cmake --preset dev-linux
 # Build
 for cfg in Debug RelWithDebInfo; do
     cmake --build build-local -j --config $cfg
@@ -65,30 +43,19 @@ cat <<- EOF > "$config"
 [cmake]
 config = ["Debug", "Release"]
 generator = "Ninja Multi-Config"
-[cmake.options]
-CMAKE_FIND_ROOT_PATH = "$pfx/pybind11-2.11.1;$pfx/casadi;$pfx/eigen-master"
-USE_GLOBAL_PYBIND11 = "On"
-ALPAQA_PYTHON_DEBUG_CONFIG = "Debug"
-ALPAQA_WITH_PY_STUBS = "On"
-ALPAQA_WITH_CUTEST = "On"
-ALPAQA_WITH_LBFGSB = "Off"
-ALPAQA_WITH_EXTERNAL_CASADI = "On"
-ALPAQA_WITH_ACCURATE_BUILD_TIME = "Off"
+preset = "dev-linux-python"
 EOF
 . ./.venv/bin/activate
 pip install -U pip build
 develop=false
 if $develop; then
-    LDFLAGS='-static-libstdc++' \
     pip install -e ".[test]" -v \
         --config-settings=--cross="$pfx/$triple.py-build-cmake.cross.toml" \
         --config-settings=--local="$PWD/$config"
 else
-    LDFLAGS='-static-libstdc++' \
     python -m build -w "." -o staging \
         -C--cross="$pfx/$triple.py-build-cmake.cross.toml" \
         -C--local="$PWD/$config"
-    LDFLAGS='-static-libstdc++' \
     python -m build -w "python/alpaqa-debug" -o staging \
         -C--cross="$pfx/$triple.py-build-cmake.cross.toml" \
         -C--local="$PWD/$config"
