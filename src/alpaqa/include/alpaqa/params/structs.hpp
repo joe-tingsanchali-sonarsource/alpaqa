@@ -57,6 +57,14 @@ struct attribute_table;
         inline static const attribute_table_t<S> table{__VA_ARGS__};           \
     }
 
+/// Helper macro to easily specialize @ref alpaqa::params::attribute_table.
+#define PARAMS_TABLE_CONF(type_, ...)                                          \
+    template <Config Conf, class S>                                            \
+    struct attribute_table<type_<Conf>, S> {                                   \
+        using type = type_<Conf>;                                              \
+        inline static const attribute_table_t<S> table{__VA_ARGS__};           \
+    }
+
 /// Helper macro to easily initialize a
 /// @ref alpaqa::params::attribute_table_t.
 #define PARAMS_MEMBER(name, ...)                                               \
@@ -80,6 +88,14 @@ struct attribute_alias_table;
     template <class S>                                                         \
     struct attribute_alias_table<type_, S> {                                   \
         using type = type_;                                                    \
+        inline static const attribute_alias_table_t<S> table{__VA_ARGS__};     \
+    }
+
+/// Helper macro to easily specialize @ref alpaqa::params::attribute_alias_table.
+#define PARAMS_ALIAS_TABLE_CONF(type_, ...)                                    \
+    template <Config Conf, class S>                                            \
+    struct attribute_alias_table<type_<Conf>, S> {                             \
+        using type = type_<Conf>;                                              \
         inline static const attribute_alias_table_t<S> table{__VA_ARGS__};     \
     }
 

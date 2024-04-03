@@ -31,36 +31,17 @@ pybind11_add_module(_alpaqa MODULE
     "src/inner/inner-solver.py.cpp"
     "src/problem/problems.py.cpp"
     "src/proximal/prox.py.cpp"
-    "src/params/alm-params.cpp"
-    "src/params/anderson-direction-params.cpp"
-    "src/params/anderson-params.cpp"
-    "src/params/inner-solve-options.cpp"
-    "src/params/lbfgs-direction-params.cpp"
-    "src/params/lbfgs-params.cpp"
-    "src/params/panoc-params.cpp"
-    "src/params/fista-params.cpp"
-    "src/params/zerofpr-params.cpp"
-    "src/params/structured-lbfgs-direction-params.cpp"
-    "src/params/structured-newton-direction-params.cpp"
-    "src/params/convex-newton-direction-params.cpp"
-    "src/params/newton-tr-direction-params.cpp"
-    "src/params/pantr-params.cpp"
-    "src/params/steihaug-params.cpp"
     # NO_EXTRAS # Prevent pybind11 from stripping the binary
 )
 if (ALPAQA_WITH_OCP)
     target_sources(_alpaqa PRIVATE
         "src/inner/panoc-ocp.py.cpp"
         "src/inner/ocp.py.cpp"
-        "src/params/panoc-ocp-params.cpp"
-        "src/problem/control-problems.py.cpp"
-    )
+        "src/problem/control-problems.py.cpp")
 endif()
 if (ALPAQA_WITH_LBFGSB)
     target_sources(_alpaqa PRIVATE
-        "src/inner/lbfgsb.py.cpp"
-        "src/params/lbfgsb-params.cpp"
-    )
+        "src/inner/lbfgsb.py.cpp")
     target_link_libraries(_alpaqa PRIVATE alpaqa::lbfgsb-adapter)
 endif()
 target_include_directories(_alpaqa PRIVATE ${CMAKE_CURRENT_SOURCE_DIR}/src)

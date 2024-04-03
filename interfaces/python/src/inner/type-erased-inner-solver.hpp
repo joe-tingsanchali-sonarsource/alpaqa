@@ -32,13 +32,13 @@ struct InnerSolverVTable : util::BasicVTable {
 
     template <class T>
     InnerSolverVTable(std::in_place_t, T &t) : util::BasicVTable{std::in_place, t} {
-        stop     = util::type_erased_wrapped<T, &T::stop>();
-        get_name = util::type_erased_wrapped<T, &T::get_name>();
+        stop       = util::type_erased_wrapped<T, &T::stop>();
+        get_name   = util::type_erased_wrapped<T, &T::get_name>();
         get_params = [](const void *self_) -> py::object {
             auto &self = *std::launder(reinterpret_cast<const T *>(self_));
             return py::cast(self.get_params());
         };
-        call     = []<class... Args>(void *self_, const Problem &p, Args... args) {
+        call = []<class... Args>(void *self_, const Problem &p, Args... args) {
             auto &self = *std::launder(reinterpret_cast<T *>(self_));
             return Stats{self(p, std::forward<Args>(args)...)};
         };

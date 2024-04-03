@@ -121,7 +121,7 @@ class TypeErasedALMSolver : public util::TypeErased<ALMSolverVTable<Conf>, Alloc
         return TypeErased::template make<TypeErasedALMSolver, T>(std::forward<Args>(args)...);
     }
 
-    decltype(auto) operator()(const Problem & p, std::optional<vec> x, std::optional<vec> y,
+    decltype(auto) operator()(const Problem &p, std::optional<vec> x, std::optional<vec> y,
                               bool async, bool suppress_interrupt) {
         return call(vtable.call, p, x, y, async, suppress_interrupt);
     }

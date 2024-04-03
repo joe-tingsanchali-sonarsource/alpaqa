@@ -16,10 +16,10 @@ using namespace py::literals;
 #include <alpaqa/util/check-dim.hpp>
 
 #include "type-erased-panoc-direction.hpp"
+#include <dict/kwargs-to-struct.hpp>
 #include <dict/stats-to-dict.hpp>
 #include <inner/inner-solve.hpp>
 #include <inner/type-erased-inner-solver.hpp>
-#include <params/params.hpp>
 #include <util/async.hpp>
 #include <util/copy.hpp>
 #include <util/member.hpp>

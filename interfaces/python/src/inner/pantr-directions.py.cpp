@@ -10,9 +10,9 @@ using namespace py::literals;
 
 #include <alpaqa/inner/directions/pantr/newton-tr.hpp>
 
+#include <dict/kwargs-to-struct.hpp>
 #include <dict/stats-to-dict.hpp>
 #include <inner/type-erased-tr-direction.hpp>
-#include <params/params.hpp>
 
 template <alpaqa::Config Conf>
 void register_pantr_directions(py::module_ &m) {

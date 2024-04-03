@@ -23,7 +23,6 @@ using namespace std::chrono_literals;
 #include <alpaqa/outer/alm.hpp>
 #include <alpaqa/util/check-dim.hpp>
 
-#include "params/alm-params.hpp"
 #include "type-erased-alm-solver.hpp"
 #include <dict/kwargs-to-struct.hpp>
 #include <inner/type-erased-inner-solver.hpp>

@@ -10,8 +10,8 @@ using namespace py::literals;
 #include <alpaqa/accelerators/anderson.hpp>
 #include <alpaqa/util/check-dim.hpp>
 
+#include <dict/kwargs-to-struct.hpp>
 #include <dict/stats-to-dict.hpp>
-#include <params/params.hpp>
 
 template <alpaqa::Config Conf>
 void register_anderson(py::module_ &m) {

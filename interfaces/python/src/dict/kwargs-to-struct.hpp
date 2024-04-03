@@ -6,10 +6,12 @@
 
 #pragma once
 
+#include <alpaqa/params/structs.hpp>
 #include <alpaqa/util/demangled-typename.hpp>
+#include <alpaqa/util/string-util.hpp>
 #include <functional>
-#include <map>
-#include <typeinfo>
+#include <ranges>
+#include <stdexcept>
 #include <variant>
 
 #include <pybind11/chrono.h>
@@ -18,8 +20,15 @@
 namespace py = pybind11;
 using namespace py::literals;
 
+struct PythonParam {
+    std::string keys;
+};
+
 template <class T>
-T dict_to_struct(const py::dict &);
+void dict_to_struct_helper(T &, const py::dict &, const PythonParam &s);
+
+template <class T>
+py::object struct_to_dict_helper(const T &t);
 
 struct cast_error_with_types : py::cast_error {
     cast_error_with_types(const py::cast_error &e, std::string from, std::string to)
@@ -29,105 +38,116 @@ struct cast_error_with_types : py::cast_error {
 };
 
 template <class T, class A>
-auto attr_setter(A T::*attr) {
-    return [attr](T &t, const py::handle &h) {
-        try {
-            if (py::isinstance<py::dict>(h))
-                t.*attr = dict_to_struct<A>(py::cast<py::dict>(h));
-            else
-                t.*attr = h.cast<A>();
-        } catch (const py::cast_error &e) {
-            throw cast_error_with_types(e, py::str(py::type::handle_of(h)), py::type_id<A>());
-        }
-    };
-}
-template <class T, class A>
-auto attr_getter(A T::*attr) {
-    return [attr](const T &t) { return py::cast(t.*attr); };
+auto set_attr(A T::*attr, T &t, py::handle h, const PythonParam &s) {
+    try {
+        if (py::isinstance<py::dict>(h))
+            dict_to_struct_helper<A>(t.*attr, py::cast<py::dict>(h), s);
+        else
+            t.*attr = h.cast<A>();
+    } catch (const py::cast_error &e) {
+        throw cast_error_with_types(e, py::str(py::type::handle_of(h)), py::type_id<A>());
+    }
 }
 
-template <class T>
-struct attr_setter_fun_t {
-    template <class A>
-    attr_setter_fun_t(A T::*attr) : set(attr_setter(attr)), get(attr_getter(attr)) {}
+namespace alpaqa::params {
 
-    std::function<void(T &, const py::handle &)> set;
-    std::function<py::object(const T &)> get;
+/// Function wrapper to set attributes of a struct, type-erasing the type of the
+/// attribute.
+template <>
+struct attribute_accessor<PythonParam> {
+    template <class T, class T_actual, class A>
+    static attribute_accessor make(A T_actual::*attr, const char *descr = "");
+    std::function<void(const any_ptr &, const char *)> def_readwrite;
+    std::function<py::object(const any_ptr &)> to_py;
+    std::function<void(py::handle, const any_ptr &, const PythonParam &)> from_py;
 };
 
-template <class T>
-using dict_to_struct_table_t = std::map<std::string, attr_setter_fun_t<T>>;
-
-template <class T>
-struct dict_to_struct_table {};
-
-template <class T>
-auto possible_dict_keys(const std::string &input) {
-    const auto &tbl = dict_to_struct_table<T>::table;
-    py::list keys;
-    for (const auto &[k, v] : tbl)
-        keys.append(py::str(k));
-    auto dl     = py::module::import("difflib");
-    auto sorted = dl.attr("get_close_matches")(input, keys, keys.size(), 0.);
-    return py::cast<std::string>(py::str(sorted));
+namespace detail {
+template <class S>
+auto find_param_python(const attribute_table_t<S> &m, std::string_view key, std::string &error_msg)
+    -> std::optional<typename attribute_table_t<S>::const_iterator> {
+    auto it = m.find(key);
+    if (it == m.end()) {
+        py::list keys;
+        for (const auto &k : std::views::keys(m))
+            keys.append(py::str(k));
+        auto dl     = py::module::import("difflib");
+        auto sorted = dl.attr("get_close_matches")(key, keys, keys.size(), 0.);
+        error_msg   = py::cast<std::string>(py::str(", ").attr("join")(sorted));
+        return std::nullopt;
+    }
+    return std::make_optional(it);
 }
+} // namespace detail
+} // namespace alpaqa::params
 
+/// Use @p s to index into the struct type @p T and overwrite the attribute
+/// given by @p s.key.
 template <class T>
-    requires requires { dict_to_struct_table<T>::table; }
-void dict_to_struct_helper(T &t, const py::dict &kwargs) {
-    const auto &m = dict_to_struct_table<T>::table;
-    for (auto &&[key, val] : kwargs) {
-        auto skey = key.template cast<std::string>();
-        auto it   = m.find(skey);
-        if (it == m.end())
-            throw py::key_error("Unknown parameter '" + skey +
-                                "', possible keys are: " + possible_dict_keys<T>(skey));
+    requires requires { alpaqa::params::attribute_table<T, PythonParam>::table; }
+void dict_to_struct_helper(T &t, const py::dict &dict, const PythonParam &s) {
+    using namespace alpaqa::params;
+    const auto &members = attribute_table<T, PythonParam>::table;
+    std::string error_msg;
+    for (const auto &[k, v] : dict) {
+        if (!py::isinstance<py::str>(k))
+            throw std::invalid_argument("Invalid key type in " + s.keys + ", should be str");
+        auto ks    = py::cast<std::string>(k);
+        auto param = detail::find_param_python(members, ks, error_msg);
+        if (!param)
+            throw std::invalid_argument("Invalid key '" + ks + "' for type '" +
+                                        demangled_typename(typeid(T)) + "' in '" + s.keys +
+                                        "',\n  did you mean: " + error_msg);
+        PythonParam s_sub{s.keys.empty() ? ks : s.keys + '.' + ks};
         try {
-            it->second.set(t, val);
+            (*param)->second.from_py(v, &t, s_sub);
         } catch (const cast_error_with_types &e) {
-            throw std::runtime_error("Error converting parameter '" + skey + "' from " + e.from +
-                                     " to '" + e.to + "': " + e.what());
-        } catch (const std::runtime_error &e) {
-            throw std::runtime_error("Error setting parameter '" + skey + "': " + e.what());
+            throw std::runtime_error("Error converting parameter '" + s_sub.keys + "' from " +
+                                     e.from + " to '" + e.to + "': " + e.what());
         }
     }
 }
 
 template <class T>
-    requires(!requires { dict_to_struct_table<T>::table; })
-void dict_to_struct_helper(T &, const py::dict &) {
+    requires(!requires { alpaqa::params::attribute_table<T, PythonParam>::table; })
+void dict_to_struct_helper(T &, const py::dict &, const PythonParam &s) {
     throw std::runtime_error("No known conversion from Python dict to C++ type '" +
-                             demangled_typename(typeid(T)) + '\'');
+                             demangled_typename(typeid(T)) + "' in '" + s.keys + '\'');
 }
 
 template <class T>
-py::dict struct_to_dict_helper(const T &t) {
-    const auto &m = dict_to_struct_table<T>::table;
+    requires requires { alpaqa::params::attribute_table<T, PythonParam>::table; }
+py::object struct_to_dict_helper(const T &t) {
+    using namespace alpaqa::params;
+    const auto &members = attribute_table<T, PythonParam>::table;
     py::dict d;
-    for (auto &&[key, val] : m) {
-        py::object o = val.get(t);
-        if (py::hasattr(o, "to_dict"))
-            o = o.attr("to_dict")();
-        d[key.c_str()] = std::move(o);
-    }
+    for (auto &&[key, val] : members)
+        d[py::str(key)] = val.to_py(&t);
     return d;
 }
 
 template <class T>
-T dict_to_struct(const py::dict &kwargs) {
-    T t{};
-    dict_to_struct_helper(t, kwargs);
+    requires(!requires { alpaqa::params::attribute_table<T, PythonParam>::table; })
+py::object struct_to_dict_helper(const T &t) {
+    return py::cast(t);
+}
+
+template <class T>
+    requires requires { alpaqa::params::attribute_table<T, PythonParam>::table; }
+py::dict struct_to_dict(const T &t) {
+    return py::cast<py::dict>(struct_to_dict_helper<T>(t));
+}
+
+template <class T>
+T dict_to_struct(const py::dict &dict) {
+    T t;
+    dict_to_struct_helper<T>(t, dict, PythonParam{});
     return t;
 }
 
 template <class T>
 T kwargs_to_struct(const py::kwargs &kwargs) {
-    return dict_to_struct<T>(kwargs);
-}
-
-template <class T>
-py::dict struct_to_dict(const T &t) {
-    return struct_to_dict_helper<T>(t);
+    return dict_to_struct<T>(static_cast<const py::dict &>(kwargs));
 }
 
 template <class Params>
@@ -139,78 +159,71 @@ T var_kwargs_to_struct(const params_or_dict<T> &p) {
                                         : kwargs_to_struct<T>(std::get<py::dict>(p));
 }
 
-/// Helper macro to easily specialize @ref dict_to_struct_table.
-#define PARAMS_TABLE_DECL(type_)                                                                   \
-    struct dict_to_struct_table<type_> {                                                           \
-        using type = type_;                                                                        \
-        static const dict_to_struct_table_t<type> table;                                           \
-    }
-
-/// Helper macro to easily initialize a
-/// @ref dict_to_struct_table_t.
-#define PARAMS_MEMBER(name)                                                                        \
-    { #name, &type::name }
-
-/// Helper macro to easily define a specialization @ref dict_to_struct_table.
-#define PARAMS_TABLE_DEF(type_, ...)                                                               \
-    const dict_to_struct_table_t<type_> dict_to_struct_table<type_>::table {                       \
-        __VA_ARGS__                                                                                \
-    }
-
-/// Helper macro to easily instantiate a @ref dict_to_struct_table.
-#define PARAMS_TABLE_INST(type_) template struct dict_to_struct_table<type_>
-
-#if 0
-#include <alpaqa/inner/pga.hpp>
-
-template <>
-inline const dict_to_struct_table_t<alpaqa::PGAParams>
-    dict_to_struct_table<alpaqa::PGAParams>{
-        {"Lipschitz", &alpaqa::PGAParams::Lipschitz},
-        {"max_iter", &alpaqa::PGAParams::max_iter},
-        {"max_time", &alpaqa::PGAParams::max_time},
-        {"L_min", &alpaqa::PGAParams::L_min},
-        {"L_max", &alpaqa::PGAParams::L_max},
-        {"stop_crit", &alpaqa::PGAParams::stop_crit},
-        {"print_interval", &alpaqa::PGAParams::print_interval},
-        {"quadratic_upperbound_tolerance_factor",
-         &alpaqa::PGAParams::quadratic_upperbound_tolerance_factor},
-        {"linesearch_tolerance_factor",
-         &alpaqa::PGAParams::linesearch_tolerance_factor},
-    };
-
-#include <alpaqa/inner/guarded-aa-pga.hpp>
-
-template <>
-inline const dict_to_struct_table_t<alpaqa::GAAPGAParams>
-    dict_to_struct_table<alpaqa::GAAPGAParams>{
-        {"Lipschitz", &alpaqa::GAAPGAParams::Lipschitz},
-        {"limitedqr_mem", &alpaqa::GAAPGAParams::limitedqr_mem},
-        {"max_iter", &alpaqa::GAAPGAParams::max_iter},
-        {"max_time", &alpaqa::GAAPGAParams::max_time},
-        {"L_min", &alpaqa::GAAPGAParams::L_min},
-        {"L_max", &alpaqa::GAAPGAParams::L_max},
-        {"stop_crit", &alpaqa::GAAPGAParams::stop_crit},
-        {"print_interval", &alpaqa::GAAPGAParams::print_interval},
-        {"quadratic_upperbound_tolerance_factor",
-         &alpaqa::GAAPGAParams::quadratic_upperbound_tolerance_factor},
-        {"linesearch_tolerance_factor",
-         &alpaqa::GAAPGAParams::linesearch_tolerance_factor},
-        {"max_no_progress", &alpaqa::GAAPGAParams::max_no_progress},
-        {"full_flush_on_γ_change",
-         &alpaqa::GAAPGAParams::full_flush_on_γ_change},
-    };
-
+// TODO: move to separate file
+#include <alpaqa/inner/directions/panoc/anderson.hpp>
+#include <alpaqa/inner/directions/panoc/convex-newton.hpp>
+#include <alpaqa/inner/directions/panoc/lbfgs.hpp>
+#include <alpaqa/inner/directions/panoc/structured-lbfgs.hpp>
+#include <alpaqa/inner/directions/panoc/structured-newton.hpp>
+#include <alpaqa/inner/directions/pantr/newton-tr.hpp>
+#include <alpaqa/inner/fista.hpp>
+#include <alpaqa/inner/internal/lipschitz.hpp>
+#include <alpaqa/inner/internal/panoc-stop-crit.hpp>
+#include <alpaqa/inner/panoc.hpp>
+#include <alpaqa/inner/pantr.hpp>
+#include <alpaqa/inner/zerofpr.hpp>
+#include <alpaqa/outer/alm.hpp>
+#if ALPAQA_WITH_OCP
+#include <alpaqa/inner/panoc-ocp.hpp>
 #endif
+#if ALPAQA_WITH_LBFGSB
+#include <alpaqa/lbfgsb/lbfgsb-adapter.hpp>
+#endif
+
+namespace alpaqa::params {
+#include <alpaqa/params/structs.ipp>
+#if ALPAQA_WITH_LBFGSB
+#include <alpaqa/lbfgsb/lbfgsb-structs.ipp>
+#endif
+PARAMS_TABLE_CONF(alpaqa::InnerSolveOptions,                   //
+                  PARAMS_MEMBER(always_overwrite_results, ""), //
+                  PARAMS_MEMBER(max_time, ""),                 //
+                  PARAMS_MEMBER(tolerance, ""),                //
+);
+} // namespace alpaqa::params
+
+template <class T, class T_actual, class A>
+auto alpaqa::params::attribute_accessor<PythonParam>::make(A T_actual::*attr, const char *descr)
+    -> attribute_accessor {
+    return {
+        .def_readwrite =
+            [attr, descr](const any_ptr &o, const char *name) {
+                auto *obj = o.cast<py::class_<T>>();
+                return obj->def_readwrite(name, attr, descr);
+            },
+        .to_py =
+            [attr](const any_ptr &o) {
+                auto *obj = o.cast<const T>();
+                return struct_to_dict_helper(obj->*attr);
+            },
+        .from_py =
+            [attr](py::handle v, const any_ptr &o, const PythonParam &s) {
+                auto *obj = o.cast<T>();
+                set_attr(attr, *obj, v, s);
+            },
+    };
+}
 
 template <class T>
 void make_dataclass(py::class_<T> &cls) {
+    using namespace alpaqa::params;
     cls //
         .def(py::init(&dict_to_struct<T>), "params"_a)
         .def(py::init(&kwargs_to_struct<T>))
         .def("to_dict", &struct_to_dict<T>);
-    for (auto &&[key, getset] : dict_to_struct_table<T>::table)
-        cls.def_property(key.c_str(), getset.get, getset.set);
+    const auto &members = attribute_table<T, PythonParam>::table;
+    for (auto &&[k, v] : members)
+        v.def_readwrite(&cls, std::string(k).c_str());
 }
 
 template <class T, class... Extra>
