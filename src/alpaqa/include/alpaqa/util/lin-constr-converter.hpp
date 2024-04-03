@@ -184,7 +184,6 @@ void LinConstrConverter<Conf, IndexT, StorageIndexT>::
     auto n = static_cast<size_t>(A.ncol);
     assert(A.outer_ptr.size() == static_cast<size_t>(n) + 1);
     auto old_nnz = A.outer_ptr[n];
-    assert(A.inner_idx.size() >= static_cast<size_t>(old_nnz) + n);
 
     // Start by updating the outer pointer: for each active bound constraint,
     // one nonzero has to be inserted at the beginning of the current column.
@@ -199,6 +198,7 @@ void LinConstrConverter<Conf, IndexT, StorageIndexT>::
         shift += is_bound(lbx, ubx, col) ? 1 : 0;
         A.outer_ptr[col + 1] += shift;
     }
+    assert(A.inner_idx.size() >= static_cast<size_t>(old_nnz + shift));
     // We now know how many variables were constrained, so we know the new
     // number of nonzeros in the matrix, and we know how many rows to add.
     auto num_bound_constr = static_cast<index_t>(shift);
