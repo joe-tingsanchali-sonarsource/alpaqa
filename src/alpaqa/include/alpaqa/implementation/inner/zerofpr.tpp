@@ -338,6 +338,7 @@ auto ZeroFPRSolver<DirectionProviderT>::operator()(
         τ                               = τ_init;
         real_t τ_prev                   = -1;
         bool update_lbfgs_in_linesearch = params.update_direction_in_candidate;
+        bool update_lbfgs_in_accel      = params.update_direction_in_accel;
         bool updated_lbfgs              = false;
         bool dir_rejected               = true;
 
@@ -389,6 +390,21 @@ auto ZeroFPRSolver<DirectionProviderT>::operator()(
             eval_prox_grad_step(*next);
             eval_cost_in_prox(*next);
 
+            // Update L-BFGS
+            if (update_lbfgs_in_accel && !updated_lbfgs) {
+                if (τ > 0 && params.update_direction_from_prox_step) {
+                    s.lbfgs_rejected += dir_rejected = not direction.update(
+                        curr->γ, next->γ, curr->x̂, next->x, prox->p, next->p,
+                        prox->grad_ψ, next->grad_ψ);
+                } else {
+                    s.lbfgs_rejected += dir_rejected = not direction.update(
+                        curr->γ, next->γ, curr->x, next->x, curr->p, next->p,
+                        curr->grad_ψ, next->grad_ψ);
+                }
+                update_lbfgs_in_accel = false;
+                updated_lbfgs         = true;
+            }
+
             // Quadratic upper bound step size condition
             if (next->L < params.L_max && qub_violated(*next)) {
                 next->γ /= 2;
@@ -404,7 +420,7 @@ auto ZeroFPRSolver<DirectionProviderT>::operator()(
 
             // Update L-BFGS
             if (update_lbfgs_in_linesearch && !updated_lbfgs) {
-                if (params.update_direction_from_prox_step) {
+                if (τ > 0 && params.update_direction_from_prox_step) {
                     s.lbfgs_rejected += dir_rejected = not direction.update(
                         curr->γ, next->γ, curr->x̂, next->x, prox->p, next->p,
                         prox->grad_ψ, next->grad_ψ);

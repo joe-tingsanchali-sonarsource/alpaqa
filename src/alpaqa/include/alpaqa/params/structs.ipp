@@ -128,6 +128,7 @@ PARAMS_TABLE_CONF(ZeroFPRParams,                                            //
                   PARAMS_MEMBER(quadratic_upperbound_tolerance_factor, ""), //
                   PARAMS_MEMBER(linesearch_tolerance_factor, ""),           //
                   PARAMS_MEMBER(update_direction_in_candidate, ""),         //
+                  PARAMS_MEMBER(update_direction_in_accel, ""),             //
                   PARAMS_MEMBER(recompute_last_prox_step_after_stepsize_change,
                                 ""),                                  //
                   PARAMS_MEMBER(update_direction_from_prox_step, ""), //
