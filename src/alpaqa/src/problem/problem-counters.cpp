@@ -70,6 +70,21 @@ std::ostream &operator<<(std::ostream &os, const EvalCounter &c) {
        << CountResult{c.grad_ψ, c.time.grad_ψ};
     os << "           ψ_grad_ψ:" //
        << CountResult{c.ψ_grad_ψ, c.time.ψ_grad_ψ};
+    os << "+ -----------------:\n" //
+       << "              total:" //
+       << CountResult{
+              c.proj_diff_g + c.proj_multipliers + c.prox_grad_step + c.f +
+                  c.grad_f + c.f_grad_f + c.f_g + c.grad_f_grad_g_prod + c.g +
+                  c.grad_g_prod + c.grad_gi + c.jac_g + c.grad_L +
+                  c.hess_L_prod + c.hess_L + c.hess_ψ_prod + c.hess_ψ + c.ψ +
+                  c.grad_ψ + c.ψ_grad_ψ,
+              c.time.proj_diff_g + c.time.proj_multipliers +
+                  c.time.prox_grad_step + c.time.f + c.time.grad_f +
+                  c.time.f_grad_f + c.time.f_g + c.time.grad_f_grad_g_prod +
+                  c.time.g + c.time.grad_g_prod + c.time.grad_gi +
+                  c.time.jac_g + c.time.grad_L + c.time.hess_L_prod +
+                  c.time.hess_L + c.time.hess_ψ_prod + c.time.hess_ψ +
+                  c.time.ψ + c.time.grad_ψ + c.time.ψ_grad_ψ};
     return os;
 }
 
