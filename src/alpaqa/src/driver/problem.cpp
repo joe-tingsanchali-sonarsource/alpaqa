@@ -3,6 +3,7 @@
 #include <alpaqa/params/vec-from-file.hpp>
 #include <alpaqa/problem/problem-with-counters.hpp>
 #include <alpaqa/problem/type-erased-problem.hpp>
+#include <alpaqa/util/dl-flags.hpp>
 #include <alpaqa/util/io/csv.hpp>
 #if ALPAQA_WITH_DL
 #include <alpaqa/dl/dl-problem.hpp>
@@ -38,6 +39,12 @@ std::string get_reg_name_option(std::span<const std::string_view> prob_opts) {
     if (name_it != prob_opts.rend())
         name = name_it->substr(name_key.size());
     return name;
+}
+
+alpaqa::DynamicLoadFlags get_dl_flags(Options &opts) {
+    alpaqa::DynamicLoadFlags flags;
+    set_params(flags, "dl_flags", opts);
+    return flags;
 }
 
 void load_initial_guess(Options &opts, LoadedProblem &problem) {
@@ -96,9 +103,10 @@ LoadedProblem load_dl_problem(const fs::path &full_path,
     using DLProblem    = alpaqa::dl::DLProblem;
     using CntProblem   = alpaqa::ProblemWithCounters<DLProblem>;
     auto register_name = get_reg_name_option(prob_opts);
+    auto flags         = get_dl_flags(opts);
     LoadedProblem problem{
         .problem  = TEProblem::make<CntProblem>(std::in_place, full_path,
-                                               register_name, prob_opts),
+                                                register_name, prob_opts, flags),
         .abs_path = fs::absolute(full_path),
         .path     = full_path,
     };
@@ -121,9 +129,10 @@ LoadedProblem load_cs_problem(const fs::path &full_path,
     using TEProblem  = alpaqa::TypeErasedProblem<config_t>;
     using CsProblem  = alpaqa::CasADiProblem<config_t>;
     using CntProblem = alpaqa::ProblemWithCounters<CsProblem>;
+    auto flags       = get_dl_flags(opts);
     LoadedProblem problem{
-        .problem  = TEProblem::make<CntProblem>(std::in_place,
-                                               full_path.string().c_str()),
+        .problem = TEProblem::make<CntProblem>(
+            std::in_place, full_path.string().c_str(), flags),
         .abs_path = fs::absolute(full_path),
         .path     = full_path,
     };
@@ -159,9 +168,11 @@ LoadedProblem load_cu_problem(const fs::path &full_path,
     using TEProblem  = alpaqa::TypeErasedProblem<config_t>;
     using CuProblem  = alpaqa::CUTEstProblem;
     using CntProblem = alpaqa::ProblemWithCounters<CuProblem>;
+    auto flags       = get_dl_flags(opts);
     LoadedProblem problem{
-        .problem = TEProblem::make<CntProblem>(std::in_place, full_path.c_str(),
-                                               outsdif_path.c_str(), sparse),
+        .problem =
+            TEProblem::make<CntProblem>(std::in_place, full_path.c_str(),
+                                        outsdif_path.c_str(), sparse, flags),
         .abs_path = fs::absolute(full_path),
         .path     = full_path,
     };

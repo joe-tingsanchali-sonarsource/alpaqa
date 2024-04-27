@@ -601,8 +601,9 @@ void register_problems(py::module_ &m) {
             "C++ documentation: :cpp:class:`alpaqa::CUTEstProblem`\n\n"
             "See :py:class:`alpaqa.Problem` for the full documentation.");
         cutest_problem.def(
-            py::init<const char *, const char *, bool>(), "so_filename"_a,
+            py::init<const char *, const char *, bool, alpaqa::DynamicLoadFlags>(), "so_filename"_a,
             "outsdiff_filename"_a = nullptr, "sparse"_a = false,
+            py::arg_v("dl_flags", alpaqa::DynamicLoadFlags{}, "..."),
             "Load a CUTEst problem from the given shared library and OUTSDIF.d file");
         default_copy_methods(cutest_problem);
         problem_methods(cutest_problem);

@@ -18,6 +18,7 @@
 #include <alpaqa/inner/pantr.hpp>
 #include <alpaqa/inner/zerofpr.hpp>
 #include <alpaqa/outer/alm.hpp>
+#include <alpaqa/util/dl-flags.hpp>
 #if ALPAQA_WITH_OCP
 #include <alpaqa/inner/panoc-ocp.hpp>
 #endif
@@ -114,6 +115,7 @@ struct RootOpts {
     [[no_unique_address]] Value method, out, sol, x0, mul_g0, mul_x0, num_exp;
     bool extra_stats, show_funcs;
     Struct problem;
+    DynamicLoadFlags dl_flags;
 };
 
 #include <alpaqa/params/structs.ipp>
@@ -132,6 +134,7 @@ PARAMS_TABLE(
     PARAMS_MEMBER(extra_stats, "Log more per-iteration solver statistics"), //
     PARAMS_MEMBER(show_funcs, "Print the provided problem functions"),      //
     PARAMS_MEMBER(problem, "Options to pass to the problem"),               //
+    PARAMS_MEMBER(dl_flags, "Flags to pass to dlopen"),                     //
 );
 
 PARAMS_TABLE(Struct);

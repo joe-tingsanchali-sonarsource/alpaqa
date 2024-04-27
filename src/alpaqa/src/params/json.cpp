@@ -25,6 +25,7 @@
 #include <alpaqa/inner/pantr.hpp>
 #include <alpaqa/inner/zerofpr.hpp>
 #include <alpaqa/outer/alm.hpp>
+#include <alpaqa/util/dl-flags.hpp>
 #if ALPAQA_WITH_OCP
 #include <alpaqa/inner/panoc-ocp.hpp>
 #endif
@@ -316,6 +317,7 @@ ALPAQA_GETSET_PARAM_INST(std::chrono::hours);
 
 ALPAQA_GETSET_PARAM_INST(PANOCStopCrit);
 ALPAQA_GETSET_PARAM_INST(LBFGSStepSize);
+ALPAQA_GETSET_PARAM_INST(DynamicLoadFlags);
 ALPAQA_GETSET_PARAM_INST(CBFGSParams<config_t>);
 ALPAQA_GETSET_PARAM_INST(LipschitzEstimateParams<config_t>);
 ALPAQA_GETSET_PARAM_INST(PANOCParams<config_t>);

@@ -98,6 +98,7 @@ options:
     extra_stats: Log more per-iteration solver statistics, such as step sizes,
                  Newton step acceptance, and residuals. Requires `sol' to be set.
     show_funcs: Print an overview of the functions provided by the problem.
+    dl_flags:   Flags passed to dlopen when loading the problem.
 
     The prefix @ can be added to the values of x0, mul_g0 and mul_x0 to read
     the values from the given CSV file.

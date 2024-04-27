@@ -4,10 +4,6 @@
 
 namespace alpaqa::cutest {
 
-struct function_load_error : std::runtime_error {
-    using std::runtime_error::runtime_error;
-};
-
 enum class Status {
     Success  = 0, ///< Successful call.
     AllocErr = 1, ///< Array allocation/deallocation error.

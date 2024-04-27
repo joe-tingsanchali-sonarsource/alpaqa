@@ -25,7 +25,8 @@ std::shared_ptr<char> get_last_error_msg() {
     }
 }
 
-std::shared_ptr<void> load_lib(const std::filesystem::path &so_filename) {
+std::shared_ptr<void> load_lib(const std::filesystem::path &so_filename,
+                               [[maybe_unused]] DynamicLoadFlags flags) {
     assert(!so_filename.empty());
     void *h = LoadLibraryW(so_filename.c_str());
     if (!h)
@@ -48,10 +49,11 @@ void *load_func(void *handle, const std::string &name) {
     return reinterpret_cast<void *>(h);
 }
 #else
-std::shared_ptr<void> load_lib(const std::filesystem::path &so_filename) {
+std::shared_ptr<void> load_lib(const std::filesystem::path &so_filename,
+                               DynamicLoadFlags dl_flags) {
     assert(!so_filename.empty());
     ::dlerror();
-    void *h = ::dlopen(so_filename.c_str(), RTLD_LOCAL | RTLD_NOW);
+    void *h = ::dlopen(so_filename.c_str(), dl_flags);
     if (auto *err = ::dlerror())
         throw dynamic_load_error(err);
 #if ALPAQA_NO_DLCLOSE

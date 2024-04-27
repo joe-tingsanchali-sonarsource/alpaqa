@@ -21,6 +21,7 @@ pybind11_add_module(_alpaqa MODULE
     "src/accel/lbfgs.py.cpp"
     "src/outer/alm.py.cpp"
     "src/counters.py.cpp"
+    "src/misc.py.cpp"
     "src/enums.py.cpp"
     "src/inner/panoc.py.cpp"
     "src/inner/fista.py.cpp"

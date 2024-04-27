@@ -6,6 +6,7 @@
 namespace py = pybind11;
 using namespace py::literals;
 
+void register_misc(py::module_ &m);
 void register_counters(py::module_ &m);
 void register_enums(py::module_ &m);
 
@@ -117,6 +118,7 @@ PYBIND11_MODULE(MODULE_NAME, m) {
     py::register_exception<alpaqa::not_implemented_error>(m, "not_implemented_error",
                                                           PyExc_NotImplementedError);
 
+    register_misc(m);
     register_counters(m);
     register_enums(m);
 

@@ -4,6 +4,7 @@
 #include <alpaqa/casadi/CasADiFunctionWrapper.hpp>
 #include <alpaqa/casadi/casadi-namespace.hpp>
 #include <alpaqa/config/config.hpp>
+#include <alpaqa/util/dl-flags.hpp>
 #include <alpaqa/util/io/csv.hpp>
 #include <alpaqa/util/not-implemented.hpp>
 #include <alpaqa/util/sparse-ops.hpp>
@@ -216,18 +217,24 @@ struct CasADiControlFunctionsWithParam {
 
 template <Config Conf>
 CasADiControlProblem<Conf>::CasADiControlProblem(const std::string &filename,
-                                                 length_t N)
+                                                 length_t N,
+                                                 DynamicLoadFlags dl_flags)
     : N{N} {
 
     struct {
         const std::string &filename;
+        [[maybe_unused]] DynamicLoadFlags dl_flags;
         auto operator()(const std::string &name) const {
+#if ALPAQA_WITH_EXTERNAL_CASADI
             return casadi::external(name, filename);
+#else
+            return casadi::external(name, filename, dl_flags);
+#endif
         }
         auto format_name(const std::string &name) const {
             return filename + ':' + name;
         }
-    } loader{filename};
+    } loader{filename, dl_flags};
     impl = casadi_loader::CasADiControlFunctionsWithParam<Conf>::load(loader);
 
     this->nx     = impl->nx;

@@ -86,8 +86,10 @@ Function::Sparsity Function::sparsity_out(casadi_int n) const {
     return Sparsity{functions.sparsity_out(n)};
 }
 
-Function external(const std::string &name, const std::string &bin_name) {
-    return Function{util::load_lib(std::filesystem::path{bin_name}), name};
+Function external(const std::string &name, const std::string &bin_name,
+                  DynamicLoadFlags flags) {
+    auto lib_handle = util::load_lib(std::filesystem::path{bin_name}, flags);
+    return Function{std::move(lib_handle), name};
 }
 
 } // namespace casadi

@@ -1,6 +1,7 @@
 #pragma once
 
 #include <alpaqa/casadi-loader-export.h>
+#include <alpaqa/util/dl-flags.hpp>
 #include "casadi-functions.hpp"
 #include "casadi-namespace.hpp"
 
@@ -118,7 +119,8 @@ inline const casadi_int *Function::Sparsity::colind() const {
 
 /// Load the given CasADi function from the given DLL/SO file.
 CASADI_LOADER_EXPORT Function external(const std::string &name,
-                                       const std::string &bin_name);
+                                       const std::string &bin_name,
+                                       DynamicLoadFlags dl_flags);
 
 } // namespace casadi
 END_ALPAQA_CASADI_LOADER_NAMESPACE

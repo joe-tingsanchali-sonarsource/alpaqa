@@ -114,7 +114,9 @@ class DL_LOADER_EXPORT DLProblem : public BoxConstrProblem<DefaultConfig> {
         /// `alpaqa_problem_register_t(alpaqa_register_arg_t user_param)`.
         const std::string &function_name = "register_alpaqa_problem",
         /// Pointer to custom user data to pass to the registration function.
-        alpaqa_register_arg_t user_param = {});
+        alpaqa_register_arg_t user_param = {},
+        /// Flags passed to dlopen when loading the problem.
+        DynamicLoadFlags dl_flags = {});
     /// Load a problem from a shared library.
     DLProblem(
         /// Filename of the shared library to load.
@@ -124,7 +126,9 @@ class DL_LOADER_EXPORT DLProblem : public BoxConstrProblem<DefaultConfig> {
         /// `alpaqa_problem_register_t(alpaqa_register_arg_t user_param)`.
         const std::string &function_name,
         /// Custom user data to pass to the registration function.
-        std::any &user_param);
+        std::any &user_param,
+        /// Flags passed to dlopen when loading the problem.
+        DynamicLoadFlags dl_flags = {});
     /// Load a problem from a shared library.
     DLProblem(
         /// Filename of the shared library to load.
@@ -134,7 +138,9 @@ class DL_LOADER_EXPORT DLProblem : public BoxConstrProblem<DefaultConfig> {
         /// `alpaqa_problem_register_t(alpaqa_register_arg_t user_param)`.
         const std::string &function_name,
         /// Custom string arguments to pass to the registration function.
-        std::span<std::string_view> user_param);
+        std::span<std::string_view> user_param,
+        /// Flags passed to dlopen when loading the problem.
+        DynamicLoadFlags dl_flags = {});
 
   private:
     /// Path to the shared module file.
@@ -249,7 +255,9 @@ class DL_LOADER_EXPORT DLControlProblem {
         /// `alpaqa_control_problem_register_t(alpaqa_register_arg_t user_param)`.
         const std::string &function_name = "register_alpaqa_control_problem",
         /// Pointer to custom user data to pass to the registration function.
-        alpaqa_register_arg_t user_param = {});
+        alpaqa_register_arg_t user_param = {},
+        /// Flags passed to dlopen when loading the problem.
+        DynamicLoadFlags dl_flags = {});
 
   private:
     /// Handle to the shared module defining the problem.

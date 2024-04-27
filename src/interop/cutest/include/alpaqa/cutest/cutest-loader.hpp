@@ -5,9 +5,9 @@
 #include <alpaqa/problem/box-constr-problem.hpp>
 #include <alpaqa/problem/sparsity.hpp>
 #include <alpaqa/util/copyable_unique_ptr.hpp>
+#include <alpaqa/util/dl-flags.hpp>
 
 #include <iosfwd>
-#include <memory>
 #include <string>
 
 namespace alpaqa {
@@ -26,7 +26,7 @@ class CUTEST_INTERFACE_EXPORT CUTEstProblem
     /// automatically. If @p outsdif_fname is `nullptr`, the same directory as
     /// @p so_fname is used.
     CUTEstProblem(const char *so_fname, const char *outsdif_fname = nullptr,
-                  bool sparse = false);
+                  bool sparse = false, DynamicLoadFlags dl_flags = {});
     CUTEstProblem(const CUTEstProblem &);
     CUTEstProblem &operator=(const CUTEstProblem &);
     CUTEstProblem(CUTEstProblem &&) noexcept;

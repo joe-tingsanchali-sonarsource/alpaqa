@@ -136,18 +136,24 @@ auto casadi_to_index(casadi_int i) -> index_t<Conf> {
 } // namespace detail
 
 template <Config Conf>
-CasADiProblem<Conf>::CasADiProblem(const std::string &filename)
+CasADiProblem<Conf>::CasADiProblem(const std::string &filename,
+                                   DynamicLoadFlags dl_flags)
     : BoxConstrProblem<Conf>{0, 0} {
 
     struct {
         const std::string &filename;
+        [[maybe_unused]] DynamicLoadFlags dl_flags;
         auto operator()(const std::string &name) const {
+#if ALPAQA_WITH_EXTERNAL_CASADI
             return casadi::external(name, filename);
+#else
+            return casadi::external(name, filename, dl_flags);
+#endif
         }
         auto format_name(const std::string &name) const {
             return filename + ':' + name;
         }
-    } loader{filename};
+    } loader{filename, dl_flags};
     impl = casadi_loader::CasADiFunctionsWithParam<Conf>::load(loader);
 
     this->n     = impl->n;

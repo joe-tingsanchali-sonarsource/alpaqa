@@ -173,6 +173,7 @@ T var_kwargs_to_struct(const params_or_dict<T> &p) {
 #include <alpaqa/inner/pantr.hpp>
 #include <alpaqa/inner/zerofpr.hpp>
 #include <alpaqa/outer/alm.hpp>
+#include <alpaqa/util/dl-flags.hpp>
 #if ALPAQA_WITH_OCP
 #include <alpaqa/inner/panoc-ocp.hpp>
 #endif
@@ -199,6 +200,9 @@ auto alpaqa::params::attribute_accessor<PythonParam>::make(A T_actual::*attr, co
         .def_readwrite =
             [attr, descr](const any_ptr &o, const char *name) {
                 auto *obj = o.cast<py::class_<T>>();
+                using namespace std::string_view_literals;
+                if (name == "global"sv)
+                    name = "global_";
                 return obj->def_readwrite(name, attr, descr);
             },
         .to_py =

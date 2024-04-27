@@ -6,6 +6,7 @@
 #include <alpaqa/problem/box-constr-problem.hpp>
 #include <alpaqa/problem/sparsity.hpp>
 #include <alpaqa/util/copyable_unique_ptr.hpp>
+#include <alpaqa/util/dl-flags.hpp>
 #include <filesystem>
 #include <map>
 #include <string>
@@ -49,6 +50,8 @@ class CasADiProblem : public BoxConstrProblem<Conf> {
     ///
     /// @param  filename
     ///         Filename of the shared library to load the functions from.
+    /// @param  dl_flags
+    ///         Flags passed to `dlopen` when loading the problem.
     ///
     /// The file should contain functions with the names `f`, `grad_f`, `g` and
     /// `grad_g`. These functions evaluate the objective function, its gradient,
@@ -59,7 +62,7 @@ class CasADiProblem : public BoxConstrProblem<Conf> {
     ///
     /// @throws std::invalid_argument
     ///         The dimensions of the loaded functions do not match.
-    CasADiProblem(const std::string &filename);
+    CasADiProblem(const std::string &filename, DynamicLoadFlags dl_flags = {});
     /// Create a problem from a collection of serialized CasADi functions.
     CasADiProblem(const SerializedCasADiFunctions &functions);
     /// Create a problem from a collection of CasADi functions.

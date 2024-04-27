@@ -16,6 +16,7 @@ add_library(alpaqa
     "alpaqa/src/util/print.cpp"
     "alpaqa/src/util/io/csv.cpp"
     "alpaqa/src/util/quadmath/quadmath-print.cpp"
+    "alpaqa/src/util/dl-flags.cpp"
     "alpaqa/src/accelerators/lbfgs.cpp"
     "alpaqa/src/problem/problem-counters.cpp"
     "alpaqa/src/problem/ocproblem-counters.cpp"

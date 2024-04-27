@@ -136,11 +136,12 @@ Sparsity<Conf> convert_sparsity(alpaqa_sparsity_t sp) {
 
 DLProblem::DLProblem(const std::filesystem::path &so_filename,
                      const std::string &function_name,
-                     alpaqa_register_arg_t user_param)
+                     alpaqa_register_arg_t user_param,
+                     DynamicLoadFlags dl_flags)
     : BoxConstrProblem{0, 0}, file{so_filename} {
     if (so_filename.empty())
         throw std::invalid_argument("Invalid problem filename");
-    handle = util::load_lib(so_filename);
+    handle = util::load_lib(so_filename, dl_flags);
     try {
         auto *version_func = reinterpret_cast<alpaqa_dl_abi_version_t (*)()>(
             util::load_func(handle.get(), function_name + "_version"));
@@ -203,17 +204,21 @@ DLProblem::DLProblem(const std::filesystem::path &so_filename,
 }
 
 DLProblem::DLProblem(const std::filesystem::path &so_filename,
-                     const std::string &function_name, std::any &user_param)
+                     const std::string &function_name, std::any &user_param,
+                     DynamicLoadFlags dl_flags)
     : DLProblem{so_filename, function_name,
                 alpaqa_register_arg_t{reinterpret_cast<void *>(&user_param),
-                                      alpaqa_register_arg_std_any}} {}
+                                      alpaqa_register_arg_std_any},
+                dl_flags} {}
 
 DLProblem::DLProblem(const std::filesystem::path &so_filename,
                      const std::string &function_name,
-                     std::span<std::string_view> user_param)
+                     std::span<std::string_view> user_param,
+                     DynamicLoadFlags dl_flags)
     : DLProblem{so_filename, function_name,
                 alpaqa_register_arg_t{reinterpret_cast<void *>(&user_param),
-                                      alpaqa_register_arg_strings}} {}
+                                      alpaqa_register_arg_strings},
+                dl_flags} {}
 
 auto DLProblem::eval_proj_diff_g(crvec z, rvec e) const -> void {
     if (functions->eval_proj_diff_g)
@@ -301,10 +306,11 @@ bool DLProblem::provides_eval_inactive_indices_res_lna() const { return function
 
 DLControlProblem::DLControlProblem(const std::filesystem::path &so_filename,
                                    const std::string &function_name,
-                                   alpaqa_register_arg_t user_param) {
+                                   alpaqa_register_arg_t user_param,
+                                   DynamicLoadFlags dl_flags) {
     if (so_filename.empty())
         throw std::invalid_argument("Invalid problem filename");
-    handle = util::load_lib(so_filename);
+    handle = util::load_lib(so_filename, dl_flags);
     try {
         auto *version_func = reinterpret_cast<alpaqa_dl_abi_version_t (*)()>(
             util::load_func(handle.get(), function_name + "_version"));

@@ -15,8 +15,6 @@
 #include <alpaqa/params/json.hpp>
 #include <nlohmann/json.hpp>
 #include <fstream>
-#else
-#include <alpaqa/util/string-util.hpp>
 #endif
 
 class Options {

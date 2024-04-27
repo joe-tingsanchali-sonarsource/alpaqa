@@ -3,7 +3,7 @@
 #include "cutest-types.hpp"
 
 #include <alpaqa/cutest/cutest-errors.hpp>
-#include <dlfcn.h>
+#include <alpaqa/util/dl.hpp>
 #include <cassert>
 
 /*
@@ -75,14 +75,10 @@ using fortran_close = Function<"fortran_close_", void(const integer *funit, inte
 
 template <Name Nm, class Sgn>
 auto Function<Nm, Sgn>::load(void *handle) -> signature_t * {
-    (void)::dlerror();
     static_assert(name.value.back() == '\0');
-    const char *name_cstr = name.value.data();
-    auto func = reinterpret_cast<signature_t *>(::dlsym(handle, name_cstr));
-    if (const char *error = ::dlerror())
-        throw function_load_error(error);
+    auto func = util::load_func(handle, name.value.data());
     assert(func);
-    return func;
+    return reinterpret_cast<signature_t *>(func);
 }
 
 } // namespace alpaqa::cutest

@@ -14,6 +14,13 @@ ENUM_TABLE(LBFGSStepSize,                        //
            ENUM_MEMBER(BasedOnCurvature),        //
 );
 
+PARAMS_TABLE(DynamicLoadFlags,            //
+             PARAMS_MEMBER(global, ""),   //
+             PARAMS_MEMBER(lazy, ""),     //
+             PARAMS_MEMBER(nodelete, ""), //
+             PARAMS_MEMBER(deepbind, ""), //
+);
+
 PARAMS_TABLE_CONF(LBFGSParams,                      //
                   PARAMS_MEMBER(memory, ""),        //
                   PARAMS_MEMBER(min_div_fac, ""),   //

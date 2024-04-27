@@ -2,19 +2,16 @@
 
 #include <alpaqa/cutest/cutest-errors.hpp>
 #include <alpaqa/problem/sparsity.hpp>
-
-#include <dlfcn.h>
+#include <alpaqa/util/dl-flags.hpp>
+#include <alpaqa/util/dl.hpp>
 
 #include <cassert>
 #include <filesystem>
-#include <functional>
 #include <iostream>
 #include <memory>
-#include <numeric>
 #include <stdexcept>
 #include <string>
 #include <string_view>
-#include <vector>
 
 #include "cutest-functions.hpp"
 
@@ -41,20 +38,6 @@ auto checked(F &&func, std::string_view msg) {
         std::forward<F>(func)(&status, std::forward<Args>(args)...);
         throw_if_error(msg, status);
     };
-}
-
-std::shared_ptr<void> load_lib(const char *so_filename) {
-    assert(so_filename);
-    ::dlerror();
-    void *h = ::dlopen(so_filename, RTLD_LOCAL | RTLD_NOW);
-    if (auto *err = ::dlerror())
-        throw std::runtime_error(err);
-    assert(h);
-#if ALPAQA_NO_DLCLOSE
-    return std::shared_ptr<void>{h, +[](void *) {}};
-#else
-    return std::shared_ptr<void>{h, &::dlclose};
-#endif
 }
 } // namespace
 
@@ -113,13 +96,14 @@ class CUTEstLoader {
     }
 
   public:
-    CUTEstLoader(const char *so_fname, const char *outsdif_fname) {
+    CUTEstLoader(const char *so_fname, const char *outsdif_fname,
+                 DynamicLoadFlags dl_flags) {
         namespace fs = std::filesystem;
         auto path    = fs::path(so_fname);
         if (fs::is_directory(path))
             path /= "PROBLEM.so";
         // Open the shared library
-        so_handle = load_lib(path.c_str());
+        so_handle = util::load_lib(path.c_str(), dl_flags);
 
         // Open the OUTSDIF.d file
         if (outsdif_fname && *outsdif_fname)
@@ -251,9 +235,9 @@ class CUTEstLoader {
 };
 
 CUTEstProblem::CUTEstProblem(const char *so_fname, const char *outsdif_fname,
-                             bool sparse)
+                             bool sparse, DynamicLoadFlags flags)
     : BoxConstrProblem<config_t>{0, 0}, sparse{sparse} {
-    impl = std::make_unique<CUTEstLoader>(so_fname, outsdif_fname);
+    impl = std::make_unique<CUTEstLoader>(so_fname, outsdif_fname, flags);
     resize(static_cast<length_t>(impl->nvar),
            static_cast<length_t>(impl->ncon));
     x0.resize(n);

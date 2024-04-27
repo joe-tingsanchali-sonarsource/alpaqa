@@ -6,6 +6,7 @@
 #include <alpaqa/problem/box.hpp>
 #include <alpaqa/util/check-dim.hpp>
 #include <alpaqa/util/copyable_unique_ptr.hpp>
+#include <alpaqa/util/dl-flags.hpp>
 #include <filesystem>
 
 namespace alpaqa {
@@ -35,7 +36,8 @@ class CasADiControlProblem {
     /// Same as @ref penalty_alm_split, but for the terminal constraint.
     index_t penalty_alm_split_N = 0;
 
-    CasADiControlProblem(const std::string &filename, length_t N);
+    CasADiControlProblem(const std::string &filename, length_t N,
+                         DynamicLoadFlags dl_flags = {});
     ~CasADiControlProblem();
 
     CasADiControlProblem(const CasADiControlProblem &);
