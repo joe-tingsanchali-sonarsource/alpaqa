@@ -7,6 +7,7 @@
 #pragma once
 
 #include <alpaqa/params/structs.hpp>
+#include <alpaqa/util/any-ptr.hpp>
 #include <alpaqa/util/demangled-typename.hpp>
 #include <alpaqa/util/string-util.hpp>
 #include <functional>

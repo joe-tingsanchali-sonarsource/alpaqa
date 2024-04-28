@@ -1,5 +1,6 @@
 #include <alpaqa/config/config.hpp>
 #include <alpaqa/params/json.hpp>
+#include <alpaqa/util/any-ptr.hpp>
 #include <alpaqa/util/demangled-typename.hpp>
 #include <alpaqa/util/string-util.hpp>
 
