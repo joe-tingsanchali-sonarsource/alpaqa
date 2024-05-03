@@ -108,11 +108,11 @@ Zgc, Zgl = constr_function_v(XY).T
 line_opts = dict(colors="black", linewidths=0.8, linestyles="-")
 fx = [patheffects.withTickedStroke(spacing=7, linewidth=0.8)]
 cgc = plt.contour(X, Y, Zgc, [0], **line_opts)
-plt.setp(cgc.collections, path_effects=fx)
+plt.setp(cgc, path_effects=fx)
 cgl = plt.contour(X, Y, Zgl, [0], **line_opts)
-plt.setp(cgl.collections, path_effects=fx)
+plt.setp(cgl, path_effects=fx)
 xl = plt.contour(X, Y, -X, [-problem.C.lowerbound[0]], **line_opts)
-plt.setp(xl.collections, path_effects=fx)
+plt.setp(xl, path_effects=fx)
 
 plt.title("PANOC+ALM Rosenbrock example")
 plt.xlabel("$x_1$")
