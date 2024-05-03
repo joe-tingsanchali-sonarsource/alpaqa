@@ -223,7 +223,7 @@ CasADiControlProblem<Conf>::CasADiControlProblem(const std::string &filename,
 
     struct {
         const std::string &filename;
-        [[maybe_unused]] DynamicLoadFlags dl_flags;
+        DynamicLoadFlags dl_flags;
         auto operator()(const std::string &name) const {
 #if ALPAQA_WITH_EXTERNAL_CASADI
             return casadi::external(name, filename);
