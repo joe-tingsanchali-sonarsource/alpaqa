@@ -2,7 +2,7 @@ import os
 
 from conan import ConanFile
 from conan.errors import ConanInvalidConfiguration
-from conan.tools.cmake import CMakeToolchain, CMake, cmake_layout
+from conan.tools.cmake import CMakeDeps, CMakeToolchain, CMake, cmake_layout
 from conan.tools.build import can_run
 
 
@@ -64,8 +64,6 @@ class AlpaqaRecipe(ConanFile):
         "README.md",
     )
 
-    generators = ("CMakeDeps",)
-
     def requirements(self):
         self.requires("eigen/3.4.0", transitive_headers=True)
         self.test_requires("gtest/1.11.0")
@@ -76,7 +74,7 @@ class AlpaqaRecipe(ConanFile):
         if self.options.with_python:
             self.requires("pybind11/2.11.1")
         if self.options.with_matlab:
-            self.requires("utfcpp/4.0.1")
+            self.requires("utfcpp/4.0.4")
         if self.options.with_blas:
             self.requires("openblas/0.3.24")
 
@@ -96,6 +94,9 @@ class AlpaqaRecipe(ConanFile):
         cmake_layout(self)
 
     def generate(self):
+        deps = CMakeDeps(self)
+        deps.set_property("utfcpp", "cmake_target_name", "utf8cpp::utf8cpp")
+        deps.generate()
         tc = CMakeToolchain(self)
         tc.variables["ALPAQA_WITH_EXAMPLES"] = False
         for k in self.bool_alpaqa_options:
