@@ -25,15 +25,15 @@ if [ ! -d "$pfx/qpalm" ]; then
 fi
 
 # Configure
-cmake --preset dev-linux
+cmake --preset dev-linux-cross-native
 # Build
 for cfg in Debug RelWithDebInfo; do
-    cmake --build build-local -j --config $cfg
-    cmake --install build-local --config $cfg
-    cmake --install build-local --config $cfg --component debug
+    cmake --build build -j --config $cfg
+    cmake --install build --config $cfg
+    cmake --install build --config $cfg --component debug
 done
 # Package
-pushd build-local
+pushd build
 cpack -G 'TGZ;DEB' -C "RelWithDebInfo;Debug"
 popd
 
@@ -43,7 +43,7 @@ cat <<- EOF > "$config"
 [cmake]
 config = ["Debug", "Release"]
 generator = "Ninja Multi-Config"
-preset = "dev-linux-python"
+preset = "dev-linux-cross-native-python"
 EOF
 . ./.venv/bin/activate
 pip install -U pip build
