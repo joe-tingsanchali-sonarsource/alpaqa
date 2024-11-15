@@ -78,7 +78,7 @@ class AlpaqaRecipe(ConanFile):
         if self.options.with_qpalm:
             self.requires("qpalm/1.2.3", transitive_headers=True)
         if self.options.with_python:
-            self.requires("pybind11/2.12.0")
+            self.requires("pybind11/2.13.6")
         if self.options.with_matlab:
             self.requires("utfcpp/4.0.4")
         if self.options.with_blas:
