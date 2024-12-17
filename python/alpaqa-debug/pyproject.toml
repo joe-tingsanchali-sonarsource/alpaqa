@@ -18,9 +18,9 @@ description = "Debug symbols for the alpaqa package."
 [build-system]
 requires = [
     "py-build-cmake~=0.2.0a12",
-    "pybind11==2.11.1",
+    "pybind11==2.13.6",
     "pybind11-stubgen~=2.5",
-    "numpy<2",
+    "numpy<3",
 ]
 build-backend = "py_build_cmake.build_component"
 

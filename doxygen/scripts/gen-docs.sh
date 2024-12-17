@@ -43,7 +43,7 @@ function run_doxygen_coverage {
     # See if we're cross-compiling and add dependencies to CMake's search path
     if [ -n "$CMAKE_TOOLCHAIN_FILE" ]; then
         pfx="$(dirname "$CMAKE_TOOLCHAIN_FILE")"
-        extra_cmake_opts=("-D" "CMAKE_FIND_ROOT_PATH=$pfx/pybind11;$pfx/eigen-master;$pfx/casadi;$pfx/googletest")
+        extra_cmake_opts=("-D" "CMAKE_FIND_ROOT_PATH=$pfx/pybind11-2.13.6;$pfx/eigen-master;$pfx/casadi;$pfx/googletest")
     fi
 
     # Configure the project
