@@ -297,7 +297,7 @@ jobs:
           EOF
         shell: bash
       - name: Build wheels
-        uses: pypa/cibuildwheel@8d945475ac4b1aac4ae08b2fd27db9917158b6ce
+        uses: pypa/cibuildwheel@ee63bf16da6cddfb925f542f2c7b59ad50e93969
         with:
           output-dir: dist
         env:
@@ -458,4 +458,4 @@ jobs:
           name: src-dist
           path: dist
       - name: Publish package distributions to PyPI
-        uses: pypa/gh-action-pypi-publish@2f6f737ca5f74c637829c0f5c3acd0e29ea5e8bf
+        uses: pypa/gh-action-pypi-publish@67339c736fd9354cd4f8cb0b744f2b82a74b5c70
