@@ -1,3 +1,0 @@
-CompileFlags:
-  Add: [-D__clangd__, -std=c++2b]
-  Remove: [-fconcepts-diagnostics-depth=99]

@@ -1,9 +1,0 @@
-*
-!.gitignore
-!README
-!License.txt
-!blas.f
-!lbfgsb.f
-!linpack.f
-!timer.f
-!lbfgsb_c.f90
